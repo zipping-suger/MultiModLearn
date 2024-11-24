@@ -1,7 +1,6 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.backend_bases import MouseButton
 from robot import TwoLinkRobotIK
 from methods.mlp import MLP
 from methods.cgan import Generator
