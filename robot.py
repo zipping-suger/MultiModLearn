@@ -74,14 +74,15 @@ class TwoLinkRobotIK:
 
             # Early stopping
             if abs(previous_loss - loss.item()) < tolerance:
-                print(f"Early stopping at iteration {i}, Loss: {loss.item():.6f}")
+                # print(f"Early stopping at iteration {i}, Loss: {loss.item():.6f}")
                 break
 
             previous_loss = loss.item()
 
             # Print progress every 100 iterations
             if i % 100 == 0:
-                print(f"Iteration {i}, Loss: {loss.item():.6f}")
+                # print(f"Iteration {i}, Loss: {loss.item():.6f}")
+                pass
 
         return theta1.item(), theta2.item()
 
@@ -103,7 +104,7 @@ class TwoLinkRobotIK:
 
         # Check if the target is reachable
         if distance > (self.link1_length + self.link2_length) or distance < abs(self.link1_length - self.link2_length):
-            print("Target is unreachable.")
+            # print("Target is unreachable.")
             return solutions
 
         # Compute theta2 (elbow angle)
@@ -156,36 +157,36 @@ class TwoLinkRobotIK:
 # Example usage
 if __name__ == "__main__":
     # Robot parameters
-    L1 = 5.0  # Length of link 1
+    L1 = 3.0  # Length of link 1
     L2 = 3.0  # Length of link 2
 
     # Target position
-    target_x = 6.0
-    target_y = 3.0
+    target_x = 8.0
+    target_y = 8.0
 
     # Create the robot
     robot = TwoLinkRobotIK(L1, L2)
 
-    # # Solve IK analytically
-    # solutions = robot.solve_ik_analytical(target_x, target_y)
-    # print(f"Analytical solutions:")
-    # for i, (theta1, theta2) in enumerate(solutions):
-    #     print(f"Solution {i + 1}: Theta1 = {np.degrees(theta1):.2f}°, Theta2 = {np.degrees(theta2):.2f}°")
-    #     robot.plot(theta1, theta2)
-
-    # # Solve IK using gradient descent
-    # theta1, theta2 = robot.solve_ik_gradient_descent((target_x, target_y))
-    # print(f"Gradient Descent Solution: Theta1 = {np.degrees(theta1):.2f}°, Theta2 = {np.degrees(theta2):.2f}°")
-    # robot.plot(theta1, theta2)
-    
-    
-    # Solve IK using gradient descent N times with different seed
-    
-    N = 10
-    for i in range(N):
-        theta1, theta2 = robot.solve_ik_gradient_descent((target_x, target_y), seed=(np.random.uniform(-np.pi, np.pi), np.random.uniform(-np.pi, np.pi)))
-        print(f"Gradient Descent Solution: Theta1 = {np.degrees(theta1):.2f}°, Theta2 = {np.degrees(theta2):.2f}°")
+    # Solve IK analytically
+    solutions = robot.solve_ik_analytical(target_x, target_y)
+    print(f"Analytical solutions:")
+    for i, (theta1, theta2) in enumerate(solutions):
+        print(f"Solution {i + 1}: Theta1 = {np.degrees(theta1):.2f}°, Theta2 = {np.degrees(theta2):.2f}°")
         robot.plot(theta1, theta2)
+
+    # Solve IK using gradient descent
+    theta1, theta2 = robot.solve_ik_gradient_descent((target_x, target_y))
+    print(f"Gradient Descent Solution: Theta1 = {np.degrees(theta1):.2f}°, Theta2 = {np.degrees(theta2):.2f}°")
+    robot.plot(theta1, theta2)
+    
+    
+    # # Solve IK using gradient descent N times with different seed
+    
+    # N = 10
+    # for i in range(N):
+    #     theta1, theta2 = robot.solve_ik_gradient_descent((target_x, target_y), seed=(np.random.uniform(-np.pi, np.pi), np.random.uniform(-np.pi, np.pi)))
+    #     print(f"Gradient Descent Solution: Theta1 = {np.degrees(theta1):.2f}°, Theta2 = {np.degrees(theta2):.2f}°")
+    #     robot.plot(theta1, theta2)
     
     
     
