@@ -56,7 +56,7 @@ def main():
     learning_rate = 0.001
 
     # Load dataset
-    data_file_path = 'data/filtered_gradient_data.npy'
+    data_file_path = 'data/gradient_data_rs.npy'
     dataset = RobotDataset(data_file_path)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
@@ -67,7 +67,8 @@ def main():
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
 
     # Setup TensorBoard
-    folder = os.path.join("logs", datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
+    folder = os.path.join("logs",  f"mlp_model_{os.path.basename(data_file_path).split('.')[0]}") # use model and data name
+                         
     writer = SummaryWriter(folder)
 
     # Train the model

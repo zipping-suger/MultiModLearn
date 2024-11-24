@@ -141,25 +141,24 @@ if __name__ == "__main__":
     
     save_path = "data/"
 
-    # Generate data using analytical solutions
-    analytical_data = generate_data_analytical(robot, num_samples)
-    print(f"Generated {len(analytical_data)} samples using analytical solutions.")
+    # # Generate data using analytical solutions
+    # analytical_data = generate_data_analytical(robot, num_samples)
+    # print(f"Generated {len(analytical_data)} samples using analytical solutions.")
 
     # Generate data using gradient descent
-    gradient_data = generate_data_gradient_descent(robot, num_samples)
+    gradient_data = generate_data_gradient_descent(robot, num_samples, fixed_seed=False)
     print(f"Generated {len(gradient_data)} samples using gradient descent.")
 
     # Save data to files
-    np.save(f"{save_path}analytical_data.npy", analytical_data)
-    np.save(f"{save_path}gradient_data.npy", gradient_data)
+    # np.save(f"{save_path}analytical_data.npy", analytical_data)
+    np.save(f"{save_path}gradient_data_rs.npy", gradient_data)
 
 
-    
-    # Test filtering function
-    filtered_data = filter_conflicts(analytical_data)
-    print(f"Filtered data shape: {filtered_data.shape}")
-    print(f"Original data shape: {analytical_data.shape}")
-    print(f"Number of rejected samples: {len(analytical_data) - len(filtered_data)}")
+    # # Test filtering function
+    # filtered_data = filter_conflicts(analytical_data)
+    # print(f"Filtered data shape: {filtered_data.shape}")
+    # print(f"Original data shape: {analytical_data.shape}")
+    # print(f"Number of rejected samples: {len(analytical_data) - len(filtered_data)}")
     
     # Test gradient descent with filtered data
     filtered_gradient_data = filter_conflicts(gradient_data)
@@ -168,5 +167,5 @@ if __name__ == "__main__":
     print(f"Number of rejected samples: {len(gradient_data) - len(filtered_gradient_data)}")
     
     # Save filtered data to files
-    np.save(f"{save_path}filtered_analytical_data.npy", filtered_data)
-    np.save(f"{save_path}filtered_gradient_data.npy", filtered_gradient_data)
+    # np.save(f"{save_path}filtered_analytical_data.npy", filtered_data)
+    np.save(f"{save_path}filtered_gradient_data_rs.npy", filtered_gradient_data)
