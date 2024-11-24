@@ -10,13 +10,10 @@ def generate_data_analytical(robot: TwoLinkRobotIK, num_samples: int):
     start_time = time.time()
     data = []
     
-    # sample the rectangular workspace
-    x_range = (-robot.link1_length - robot.link2_length, robot.link1_length + robot.link2_length)
-    y_range = (-robot.link1_length - robot.link2_length, robot.link1_length + robot.link2_length)
+    # Sample positions from the workspace
+    samples = robot.sample_from_workspace(num_samples)
     
-    for _ in range(num_samples):
-        target_x = np.random.uniform(*x_range)
-        target_y = np.random.uniform(*y_range)
+    for target_x, target_y in samples:
         solutions = robot.solve_ik_analytical(target_x, target_y)
         for theta1, theta2 in solutions:
             data.append([target_x, target_y, theta1, theta2])
@@ -29,13 +26,10 @@ def generate_data_gradient_descent(robot: TwoLinkRobotIK, num_samples: int, fixe
     start_time = time.time()
     data = []
     
-    # sample the rectangular workspace
-    x_range = (-robot.link1_length - robot.link2_length, robot.link1_length + robot.link2_length)
-    y_range = (-robot.link1_length - robot.link2_length, robot.link1_length + robot.link2_length)
+    # Sample positions from the workspace
+    samples = robot.sample_from_workspace(num_samples)
     
-    for _ in range(num_samples):
-        target_x = np.random.uniform(*x_range)
-        target_y = np.random.uniform(*y_range)
+    for target_x, target_y in samples:
         if fixed_seed:
             theta1, theta2 = robot.solve_ik_gradient_descent((target_x, target_y))
         else:
@@ -49,6 +43,7 @@ def generate_data_gradient_descent(robot: TwoLinkRobotIK, num_samples: int, fixe
     print(f"Time taken to generate {num_samples} samples using gradient descent: {end_time - start_time:.2f} seconds")
     return np.array(data)
 
+# TODO filter does not work
 def filter_conflicts(data: np.ndarray, radius: float = 1, epsilon: float = 0.1) -> np.ndarray:
     """
     Detect and reject conflicting samples in the dataset based on local neighborhood interpolation.

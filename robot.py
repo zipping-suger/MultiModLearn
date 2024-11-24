@@ -28,6 +28,22 @@ class TwoLinkRobotIK:
         x = self.link1_length * torch.cos(theta1) + self.link2_length * torch.cos(theta1 + theta2)
         y = self.link1_length * torch.sin(theta1) + self.link2_length * torch.sin(theta1 + theta2)
         return torch.stack([x, y])
+    
+    def forward_kinematics(self, angles_batch):
+        """
+        Compute the end-effector positions for a batch of joint angles using forward kinematics.
+
+        Parameters:
+            angles_batch (torch.Tensor): Batch of joint angles with shape (N, 2), where N is the number of samples.
+
+        Returns:
+            torch.Tensor: Batch of end-effector positions with shape (N, 2).
+        """
+        theta1 = angles_batch[:, 0]
+        theta2 = angles_batch[:, 1]
+        x = self.link1_length * torch.cos(theta1) + self.link2_length * torch.cos(theta1 + theta2)
+        y = self.link1_length * torch.sin(theta1) + self.link2_length * torch.sin(theta1 + theta2)
+        return torch.stack([x, y], dim=1)
 
     def solve_ik_gradient_descent(self, target_position, seed = (0,0), learning_rate=0.1, iterations=1000, tolerance=1e-6):
         """
@@ -124,6 +140,31 @@ class TwoLinkRobotIK:
             solutions.append((theta1, theta2))
 
         return solutions
+    
+    def sample_from_workspace(self, num_samples, square = True):
+        """
+        Sample random positions from the workspace.
+
+        Parameters:
+            num_samples (int): Number of samples to generate.
+
+        Returns:
+            np.ndarray: Array of sampled positions (x, y).
+        """
+        samples = []
+        x_range = (-self.link1_length - self.link2_length, self.link1_length + self.link2_length)
+        y_range = (-self.link1_length - self.link2_length, self.link1_length + self.link2_length)
+        
+        for _ in range(num_samples):
+            while True:
+                target_x = np.random.uniform(*x_range)
+                target_y = np.random.uniform(*y_range)
+                distance = np.sqrt(target_x**2 + target_y**2)
+                if square or (distance <= (self.link1_length + self.link2_length) and distance >= abs(self.link1_length - self.link2_length)):
+                    samples.append((target_x, target_y))
+                    break
+        
+        return np.array(samples)
 
     def plot(self, theta1, theta2):
         """

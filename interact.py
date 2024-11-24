@@ -19,7 +19,10 @@ input_size = 2
 hidden_size = 64
 output_size = 2
 model = MLP(input_size, hidden_size, output_size)
-model.load_state_dict(torch.load('logs/mlp_model_gradient_data_rs/mlp_model_gradient_data_rs.pth'))
+# model.load_state_dict(torch.load('logs/mlp_model_gradient_data/mlp_model_gradient_data.pth'))
+# model.load_state_dict(torch.load('logs/mlp_model_gradient_data_rs/mlp_model_gradient_data_rs.pth'))
+# model.load_state_dict(torch.load('logs/mlp_model_direct_differentiable/mlp_model_direct_differentiable.pth'))
+
 model.eval()
 
 # Load the trained CGAN model
@@ -71,7 +74,7 @@ def on_mouse_move(event):
     target_position = [float(target_position[0]), float(target_position[1])]
     
     # Choose method
-    method = 'cvae'  # Change this to 'gradient_descent', 'mlp', 'cgan', or 'cvae' to use different methods
+    method = 'mlp'  # Change this to 'gradient_descent', 'mlp', 'cgan', or 'cvae' to use different methods
     
     if method == 'gradient_descent':
         # Solve IK using gradient descent
