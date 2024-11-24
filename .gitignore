@@ -1,5 +1,5 @@
 .conda
-__pycache__/
-methods/__pycache__
+# all .pyc files
+*.pyc
 data/
 logs/
