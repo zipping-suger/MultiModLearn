@@ -4,24 +4,23 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import os
+import shutil
 import datetime
 from data_pipeline import RobotDataset
 
 class MLP(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(MLP, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, output_size)
+        self.model = nn.Sequential(
+            nn.Linear(input_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, output_size)
+        )
     
     def forward(self, x):
-        out = self.fc1(x)
-        out = self.relu(out)
-        out = self.fc2(out)
-        out = self.relu(out)
-        out = self.fc3(out)
-        return out
+        return self.model(x)
 
 def train(model, dataloader, criterion, optimizer, scheduler, num_epochs, writer):
     model.train()
@@ -56,7 +55,7 @@ def main():
     learning_rate = 0.001
 
     # Load dataset
-    data_file_path = 'data/gradient_data_rs.npy'
+    data_file_path = 'data/gradient_data.npy'
     dataset = RobotDataset(data_file_path)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
@@ -68,7 +67,9 @@ def main():
 
     # Setup TensorBoard
     folder = os.path.join("logs",  f"mlp_model_{os.path.basename(data_file_path).split('.')[0]}") # use model and data name
-                         
+    # clear the folder
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
     writer = SummaryWriter(folder)
 
     # Train the model
