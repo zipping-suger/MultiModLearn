@@ -20,7 +20,7 @@ def train_ik_with_differentiable_kinematics(model, robot: TwoLinkRobotIK, sample
             predicted_angles = model(target_positions)
             
             # use the forward kinematics to compute the end effector positions
-            predicted_positions = robot.forward_kinematics(predicted_angles)
+            predicted_positions = robot.forward_kinematics_batch(predicted_angles)
                 
             # compute the loss between the predicted and target positions
             loss = criterion(predicted_positions, target_positions)

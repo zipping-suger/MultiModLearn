@@ -66,9 +66,9 @@ class CVAE(nn.Module):
 
 
 def loss_function(x_recon, x, mu, logvar):
-    BCE = nn.functional.mse_loss(x_recon, x, reduction='sum')
-    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-    return BCE + 0.01*KLD
+    BCE = nn.functional.mse_loss(x_recon, x, reduction='mean')
+    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())/x.size(0)
+    return BCE + KLD
 
 # Example usage
 if __name__ == "__main__":

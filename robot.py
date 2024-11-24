@@ -13,7 +13,7 @@ class TwoLinkRobotIK:
         """
         self.link1_length = link1_length
         self.link2_length = link2_length
-
+        
     def forward_kinematics(self, theta1, theta2):
         """
         Compute the end-effector position using forward kinematics.
@@ -28,8 +28,24 @@ class TwoLinkRobotIK:
         x = self.link1_length * torch.cos(theta1) + self.link2_length * torch.cos(theta1 + theta2)
         y = self.link1_length * torch.sin(theta1) + self.link2_length * torch.sin(theta1 + theta2)
         return torch.stack([x, y])
+        
+    def forward_kinematics_np(self, theta1, theta2):
+        """
+        Compute the end-effector position using forward kinematics.
+
+        Parameters:
+            theta1 (float): Joint angle 1 in radians.
+            theta2 (float): Joint angle 2 in radians.
+
+        Returns:
+            np.ndarray: End-effector position (x, y).
+        """
+        x = self.link1_length * np.cos(theta1) + self.link2_length * np.cos(theta1 + theta2)
+        y = self.link1_length * np.sin(theta1) + self.link2_length * np.sin(theta1 + theta2)
+        return np.array([x, y])
+
     
-    def forward_kinematics(self, angles_batch):
+    def forward_kinematics_batch(self, angles_batch):
         """
         Compute the end-effector positions for a batch of joint angles using forward kinematics.
 
@@ -165,6 +181,46 @@ class TwoLinkRobotIK:
                     break
         
         return np.array(samples)
+    
+    def evaluate(self, theta1, theta2, target_x, target_y):
+        """
+        Evaluate the error between the end effector position and the target position.
+
+        Parameters:
+            theta1 (float): Angle of the first link in radians.
+            theta2 (float): Angle of the second link in radians.
+            target_x (float): Target x-coordinate of the end effector.
+            target_y (float): Target y-coordinate of the end effector.
+
+        Returns:
+            float: Euclidean distance between the end effector and the target position.
+        """
+        end_effector = self.forward_kinematics_np(theta1, theta2)
+        target = np.array([target_x, target_y])
+        return np.linalg.norm(end_effector - target)
+    
+    def evaluate_batch(self, angles_batch, target_positions):
+        """
+        Evaluate the error between the end effector positions and the target positions for a batch of samples.
+
+        Parameters:
+            angles_batch (torch.Tensor): Batch of joint angles with shape (N, 2), where N is the number of samples.
+            target_positions (torch.Tensor): Batch of target positions with shape (N, 2).
+
+        Returns:
+            np.ndarray: Batch of Euclidean distances between the end effectors and the target positions.
+        """
+        
+        # convert input to tensor if not already
+        if not torch.is_tensor(angles_batch):
+            angles_batch = torch.tensor(angles_batch, dtype=torch.float32)
+        if not torch.is_tensor(target_positions):
+            target_positions = torch.tensor(target_positions, dtype=torch.float32) 
+        
+        end_effectors = self.forward_kinematics_batch(angles_batch).detach().numpy()
+        target_positions = target_positions.numpy()
+        return np.linalg.norm(end_effectors - target_positions, axis=1)
+    
 
     def plot(self, theta1, theta2):
         """

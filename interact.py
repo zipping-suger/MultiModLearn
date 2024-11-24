@@ -6,6 +6,7 @@ from robot import TwoLinkRobotIK
 from mlp import MLP
 from cgan import Generator
 from cvae import CVAE  # Import the CVAE class
+from reinforce import PolicyNetwork
 
 # Robot parameters
 L1 = 3.0  # Length of link 1
@@ -45,6 +46,11 @@ cvae = CVAE(input_dim, condition_dim, hidden_dim, latent_dim)
 cvae.load_state_dict(torch.load('logs/cvae_model_gradient_data/cvae_model_gradient_data.pth'))
 cvae.eval()
 
+# Load the trained reinforce policy model
+reinforce_policy_net = PolicyNetwork(input_size, hidden_size, output_size)
+reinforce_policy_net.load_state_dict(torch.load('logs/REINFORCE/reinforce_model.pth'))
+reinforce_policy_net.eval()
+
 # Initialize plot
 fig, ax = plt.subplots(figsize=(6, 6))
 ax.set_xlim(-L1 - L2 - 1, L1 + L2 + 1)
@@ -74,7 +80,7 @@ def on_mouse_move(event):
     target_position = [float(target_position[0]), float(target_position[1])]
     
     # Choose method
-    method = 'mlp'  # Change this to 'gradient_descent', 'mlp', 'cgan', or 'cvae' to use different methods
+    method = 'reinforce'  # Change this to 'gradient_descent', 'mlp', 'cgan', or 'cvae' to use different methods
     
     if method == 'gradient_descent':
         # Solve IK using gradient descent
@@ -95,6 +101,11 @@ def on_mouse_move(event):
         # Sample from the latent space
         latent_sample = torch.randn(1, latent_dim)
         theta1, theta2 = cvae.decoder(condition, latent_sample).detach().numpy()[0]
+    elif method == 'reinforce':
+        # Solve IK using the reinforce policy network
+        input_tensor = torch.tensor(target_position, dtype=torch.float32).unsqueeze(0)
+        output_tensor, _ = reinforce_policy_net(input_tensor)
+        theta1, theta2 = output_tensor[0].detach().numpy()
         
     
     update_plot(theta1, theta2)
