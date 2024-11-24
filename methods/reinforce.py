@@ -130,7 +130,7 @@ def main():
     agent = REINFORCEAgent(state_dim, action_dim, hidden_size, lr=learning_rate)
 
     # Setup logging
-    log_dir = os.path.join("../logs", "REINFORCE")
+    log_dir = os.path.join("logs", "REINFORCE")
     if os.path.exists(log_dir):
         shutil.rmtree(log_dir)
     os.makedirs(log_dir, exist_ok=True)

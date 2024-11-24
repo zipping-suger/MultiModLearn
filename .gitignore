@@ -1,5 +1,4 @@
 .conda
-# all .pyc files
 *.pyc
 data/
 logs/

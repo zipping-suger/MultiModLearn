@@ -76,7 +76,7 @@ def train():
     learning_rate = 0.0002
 
     # Load dataset
-    data_file_path = '../data/gradient_data_rs.npy'
+    data_file_path = 'data/gradient_data.npy'
     dataset = RobotDataset(data_file_path)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 

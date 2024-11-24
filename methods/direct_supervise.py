@@ -74,7 +74,7 @@ def main():
     criterion.to(device)
 
     # Setup TensorBoard
-    folder = os.path.join("../logs",  f"mlp_model_direct_differentiable") # use model and data name
+    folder = os.path.join("logs",  f"mlp_model_direct_differentiable") # use model and data name
     # clear the folder
     if os.path.exists(folder):
         shutil.rmtree(folder)

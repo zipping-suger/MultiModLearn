@@ -4,8 +4,9 @@ import matplotlib.pyplot as plt
 from robot import TwoLinkRobotIK
 from methods.mlp import MLP
 from methods.cgan import Generator
-from methods.cvae import CVAE  # Import the CVAE class
+from methods.cvae import CVAE 
 from methods.reinforce import PolicyNetwork
+from methods.ibc import EnergyModel, infer_angles
 import argparse
 
 # Robot parameters
@@ -31,16 +32,20 @@ latent_dim = 1
 def load_model(model_type):
     if model_type == 'mlp':
         model = MLP(input_size, hidden_size, output_size)
+        # model.load_state_dict(torch.load('logs/mlp_model_gradient_data/mlp_model_model_gradient_data.pth', weights_only=True))
+        # model.load_state_dict(torch.load('logs/mlp_model_gradient_data_rs/mlp_model_gradient_data_rs.pth', weights_only=True))
         model.load_state_dict(torch.load('logs/mlp_model_direct_differentiable/mlp_model_direct_differentiable.pth', weights_only=True))
         model.eval()
         return model
     elif model_type == 'cgan':
         generator = Generator(latent_size, hidden_size, output_size, condition_size)
+        # generator.load_state_dict(torch.load('logs/cgan_model_gradient_data/cgan_model_gradient_data.pth', weights_only=True))
         generator.load_state_dict(torch.load('logs/cgan_model_gradient_data_rs/generator_gradient_data_rs.pth', weights_only=True))
         generator.eval()
         return generator
     elif model_type == 'cvae':
         cvae = CVAE(input_dim, condition_size, hidden_size, latent_dim)
+        # cvae.load_state_dict(torch.load('logs/cvae_model_gradient_data/cvae_model_gradient_data.pth', weights_only=True))
         cvae.load_state_dict(torch.load('logs/cvae_model_gradient_data_rs/cvae_model_gradient_data_rs.pth', weights_only=True))
         cvae.eval()
         return cvae
@@ -49,6 +54,13 @@ def load_model(model_type):
         reinforce_policy_net.load_state_dict(torch.load('logs/REINFORCE/reinforce_model.pth', weights_only=True))
         reinforce_policy_net.eval()
         return reinforce_policy_net
+    elif model_type == 'ibc':
+        energy_model = EnergyModel(input_size=input_size, action_size=output_size, hidden_size=hidden_size)
+        # energy_model.load_state_dict(torch.load('logs/ibc_model_gradient_data/ibc_model_gradient_data.pth', weights_only=True))
+        energy_model.load_state_dict(torch.load('logs/ibc_model_gradient_data_rs/ibc_model_gradient_data_rs.pth', weights_only=True))
+        energy_model.eval()
+        energy_model.to('cuda')
+        return energy_model
 
 def ik_methods(method, target_position):
     if method == 'gradient_descent':
@@ -70,14 +82,21 @@ def ik_methods(method, target_position):
         input_tensor = torch.tensor(target_position, dtype=torch.float32).unsqueeze(0)
         output_tensor, _ = reinforce_model(input_tensor)
         return output_tensor[0].detach().numpy()
+    elif method == 'ibc':
+        target_tensor = torch.tensor(target_position, dtype=torch.float32).unsqueeze(0).to('cuda')
+        y_min = torch.tensor([-3.14, -3.14], device='cuda')
+        y_max = torch.tensor([3.14, 3.14], device='cuda')
+        inferred_angles = infer_angles(energy_model, target_tensor, y_min, y_max)
+        return inferred_angles.cpu().numpy()[0]
 
 def main(method_type):
-    global mlp_model, cgan_model, cvae_model, reinforce_model
+    global mlp_model, cgan_model, cvae_model, reinforce_model, energy_model
 
     mlp_model = load_model('mlp')
     cgan_model = load_model('cgan')
     cvae_model = load_model('cvae')
     reinforce_model = load_model('reinforce')
+    energy_model = load_model('ibc')
 
     # Initialize plot
     fig, ax = plt.subplots(figsize=(6, 6))
@@ -128,7 +147,7 @@ def main(method_type):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='2-Link Robotic Arm Inverse Kinematics')
-    parser.add_argument('--method', type=str, default='mlp', choices=['gradient_descent', 'mlp', 'cgan', 'cvae', 'reinforce'], help='IK method to use')
+    parser.add_argument('--method', type=str, default='gradient_descent', choices=['gradient_descent', 'mlp', 'cgan', 'cvae', 'reinforce', 'ibc'], help='IK method to use')
     args = parser.parse_args()
     print(f"Using {args.method} method for inverse kinematics")
     main(args.method)

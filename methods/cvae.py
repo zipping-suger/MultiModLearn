@@ -88,12 +88,12 @@ if __name__ == "__main__":
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     
     # Load dataset
-    data_file_path = '../data/gradient_data_rs.npy'
+    data_file_path = 'data/gradient_data_rs.npy'
     dataset = RobotDataset(data_file_path)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     
     # Initialize SummaryWriter
-    folder = os.path.join("../logs", f"cvae_model_{os.path.basename(data_file_path).split('.')[0]}")
+    folder = os.path.join("logs", f"cvae_model_{os.path.basename(data_file_path).split('.')[0]}")
     if os.path.exists(folder):
         shutil.rmtree(folder)
     writer = SummaryWriter(folder)
