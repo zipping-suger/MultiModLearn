@@ -3,8 +3,12 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from torch.distributions import Normal
+
 import os
 import shutil
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from robot import TwoLinkRobotIK  # Ensure this is available
 
 
@@ -126,7 +130,7 @@ def main():
     agent = REINFORCEAgent(state_dim, action_dim, hidden_size, lr=learning_rate)
 
     # Setup logging
-    log_dir = os.path.join("logs", "REINFORCE")
+    log_dir = os.path.join("../logs", "REINFORCE")
     if os.path.exists(log_dir):
         shutil.rmtree(log_dir)
     os.makedirs(log_dir, exist_ok=True)

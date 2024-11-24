@@ -1,12 +1,14 @@
-import os
-import shutil
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-import numpy as np
+import os
+import shutil
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from data_pipeline import RobotDataset
 
 
@@ -81,21 +83,17 @@ if __name__ == "__main__":
     num_epochs = 100
     learning_rate = 1e-3
 
-    # Load your dataset here
-    # dataset = YourDataset()
-    # dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-
     # Initialize model, optimizer
     model = CVAE(input_dim, condition_dim, hidden_dim, latent_dim)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     
     # Load dataset
-    data_file_path = 'data/gradient_data.npy'
+    data_file_path = '../data/gradient_data_rs.npy'
     dataset = RobotDataset(data_file_path)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     
     # Initialize SummaryWriter
-    folder = os.path.join("logs", f"cvae_model_{os.path.basename(data_file_path).split('.')[0]}")
+    folder = os.path.join("../logs", f"cvae_model_{os.path.basename(data_file_path).split('.')[0]}")
     if os.path.exists(folder):
         shutil.rmtree(folder)
     writer = SummaryWriter(folder)

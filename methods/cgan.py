@@ -3,8 +3,12 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+
 import os
 import shutil
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from data_pipeline import RobotDataset
 
 # Generator architecture remains the same
@@ -72,7 +76,7 @@ def train():
     learning_rate = 0.0002
 
     # Load dataset
-    data_file_path = 'data/gradient_data_rs.npy'
+    data_file_path = '../data/gradient_data_rs.npy'
     dataset = RobotDataset(data_file_path)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
@@ -85,7 +89,7 @@ def train():
     optimizer_d = optim.Adam(discriminator.parameters(), lr=learning_rate)
 
     # Initialize SummaryWriter
-    folder = os.path.join("logs", f"cgan_model_{os.path.basename(data_file_path).split('.')[0]}")
+    folder = os.path.join("../logs", f"cgan_model_{os.path.basename(data_file_path).split('.')[0]}")
     if os.path.exists(folder):
         shutil.rmtree(folder)
     writer = SummaryWriter(folder)

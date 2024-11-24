@@ -3,9 +3,12 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import shutil
-import datetime
+
 from data_pipeline import RobotDataset
 
 class MLP(nn.Module):
@@ -55,7 +58,7 @@ def main():
     learning_rate = 0.001
 
     # Load dataset
-    data_file_path = 'data/gradient_data.npy'
+    data_file_path = '../data/gradient_data.npy'
     dataset = RobotDataset(data_file_path)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
@@ -66,7 +69,7 @@ def main():
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
 
     # Setup TensorBoard
-    folder = os.path.join("logs",  f"mlp_model_{os.path.basename(data_file_path).split('.')[0]}") # use model and data name
+    folder = os.path.join("../logs",  f"mlp_model_{os.path.basename(data_file_path).split('.')[0]}") # use model and data name
     # clear the folder
     if os.path.exists(folder):
         shutil.rmtree(folder)

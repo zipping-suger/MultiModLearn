@@ -4,6 +4,7 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from robot import TwoLinkRobotIK
 import time
+import os
 import scipy.spatial
 
 def generate_data_analytical(robot: TwoLinkRobotIK, num_samples: int):
@@ -135,6 +136,10 @@ if __name__ == "__main__":
     num_samples = 2000
     
     save_path = "data/"
+    
+    # Create the save path if it does not exist
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
 
     # # Generate data using analytical solutions
     # analytical_data = generate_data_analytical(robot, num_samples)

@@ -2,10 +2,14 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
+
 import os
 import shutil
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from robot import TwoLinkRobotIK
-from mlp import MLP
+from methods.mlp import MLP
 
 def train_ik_with_differentiable_kinematics(model, robot: TwoLinkRobotIK, sample_size, batch_size, iteration, criterion, optimizer, writer, device='cuda'):
     model.train()
@@ -70,7 +74,7 @@ def main():
     criterion.to(device)
 
     # Setup TensorBoard
-    folder = os.path.join("logs",  f"mlp_model_direct_differentiable") # use model and data name
+    folder = os.path.join("../logs",  f"mlp_model_direct_differentiable") # use model and data name
     # clear the folder
     if os.path.exists(folder):
         shutil.rmtree(folder)
