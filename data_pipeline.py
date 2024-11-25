@@ -44,6 +44,10 @@ def generate_data_gradient_descent(robot: TwoLinkRobotIK, num_samples: int, fixe
     print(f"Time taken to generate {num_samples} samples using gradient descent: {end_time - start_time:.2f} seconds")
     return np.array(data)
 
+# TODO Explore the space using rapid exploring tree (RRT), and use the previous solution as the starting seed
+def generate_data_rrt(robot: TwoLinkRobotIK, num_samples: int):
+    pass
+
 # TODO filter does not work
 def filter_conflicts(data: np.ndarray, radius: float = 1, epsilon: float = 0.1) -> np.ndarray:
     """
