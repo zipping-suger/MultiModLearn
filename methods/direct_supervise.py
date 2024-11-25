@@ -11,9 +11,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from robot import TwoLinkRobotIK
 from methods.mlp import MLP
 
-def train_ik_with_differentiable_kinematics(model, robot: TwoLinkRobotIK, sample_size, batch_size, iteration, criterion, optimizer, writer, device='cuda'):
+def train_ik_with_differentiable_kinematics(model, robot: TwoLinkRobotIK, num_epochs, batch_size, iteration, criterion, optimizer, writer, device='cuda'):
     model.train()
-    for i in range(sample_size):
+    for i in range(num_epochs):
         # sample a batch of target positions from the workspace
         target_positions = robot.sample_from_workspace(batch_size)
         # move target positions to the same device as the model
@@ -37,12 +37,12 @@ def train_ik_with_differentiable_kinematics(model, robot: TwoLinkRobotIK, sample
             if j % 10 == 0:
                 # log the loss
                 writer.add_scalar('Loss/train', loss.item(), i * iteration + j)
-                print(f'Iteration [{i+1}/{sample_size}], Loss: {loss.item():.4f}')
+                print(f'Iteration [{i+1}/{num_epochs}], Loss: {loss.item():.4f}')
             
         
         # log the loss
         writer.add_scalar('Loss/train', loss.item(), i)
-        print(f'Iteration [{i+1}/{sample_size}], Loss: {loss.item():.4f}')
+        print(f'Iteration [{i+1}/{num_epochs}], Loss: {loss.item():.4f}')
         
 
 
@@ -51,8 +51,8 @@ def main():
     input_size = 2
     hidden_size = 64
     output_size = 2
-    sample_size = 200
-    iteration = 50
+    num_epochs = 400
+    iteration = 10
     batch_size = 32
     learning_rate = 0.001
 
@@ -81,7 +81,7 @@ def main():
     writer = SummaryWriter(folder)
 
     # Train the model
-    train_ik_with_differentiable_kinematics(model, robot, sample_size, batch_size, iteration, criterion, optimizer, writer, device=device)
+    train_ik_with_differentiable_kinematics(model, robot, num_epochs, batch_size, iteration, criterion, optimizer, writer, device=device)
     
     # Save the model with a name that includes the data it trained on
     model_name = f"mlp_model_direct_differentiable.pth"

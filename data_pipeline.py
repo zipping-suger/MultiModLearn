@@ -154,6 +154,21 @@ class RobotDataset(Dataset):
             'position': torch.tensor([target_x, target_y], dtype=torch.float32),
             'angles': torch.tensor([theta1, theta2], dtype=torch.float32)
         }
+        
+class RobotDataset(Dataset):
+    def __init__(self, data):
+        self.data = data
+    
+    def __len__(self):
+        return len(self.data)
+    
+    def __getitem__(self, idx):
+        sample = self.data[idx]
+        target_x, target_y, theta1, theta2 = sample
+        return {
+            'position': torch.tensor([target_x, target_y], dtype=torch.float32),
+            'angles': torch.tensor([theta1, theta2], dtype=torch.float32)
+        }
 
 def main():
     parser = argparse.ArgumentParser(description="Generate robot data using different methods")

@@ -15,6 +15,7 @@ from data_pipeline import RobotDataset
 class Generator(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, condition_size):
         super(Generator, self).__init__()
+        self.latent_size = input_size
         self.model = nn.Sequential(
             nn.Linear(input_size + condition_size, hidden_size),
             nn.ReLU(),
@@ -65,34 +66,7 @@ def compute_generator_loss(discriminator, fake_samples, condition):
     loss = -torch.mean(torch.log(torch.sigmoid(d_fake) + 1e-10))
     return loss
 
-def train(data_file_path):
-    # Hyperparameters
-    latent_size = 2
-    hidden_size = 64
-    output_size = 2
-    condition_size = 2
-    num_epochs = 300
-    batch_size = 100
-    learning_rate = 0.0002
-
-    # Load dataset
-    dataset = RobotDataset(data_file_path)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-
-    # Initialize models
-    generator = Generator(latent_size, hidden_size, output_size, condition_size)
-    discriminator = Discriminator(output_size, hidden_size, 1, condition_size)
-
-    # Optimizers
-    optimizer_g = optim.Adam(generator.parameters(), lr=learning_rate)
-    optimizer_d = optim.Adam(discriminator.parameters(), lr=learning_rate)
-
-    # Initialize SummaryWriter
-    folder = os.path.join("logs", f"cgan_model_{os.path.basename(data_file_path).split('.')[0]}")
-    if os.path.exists(folder):
-        shutil.rmtree(folder)
-    writer = SummaryWriter(folder)
-
+def train(dataloader, generator, discriminator, optimizer_g, optimizer_d, num_epochs, writer):
     # Training loop following the algorithm in the image
     for epoch in range(num_epochs):
         for i, batch in enumerate(dataloader):
@@ -102,7 +76,7 @@ def train(data_file_path):
             # Step 1: Update discriminator
             for _ in range(20):  # Can adjust number of discriminator updates per generator update
                 # Draw noise samples
-                z = torch.randn(position.size(0), latent_size)
+                z = torch.randn(position.size(0), generator.latent_size)
                 
                 # Generate fake samples
                 fake_angles = generator(z, position)
@@ -117,7 +91,7 @@ def train(data_file_path):
                 optimizer_d.step()
 
             # Step 2 & 3: Update generator
-            z = torch.randn(position.size(0), latent_size)
+            z = torch.randn(position.size(0), generator.latent_size)
             fake_angles = generator(z, position)
             g_loss = compute_generator_loss(discriminator, fake_angles, position)
             
@@ -133,9 +107,43 @@ def train(data_file_path):
 
         print(f"Epoch [{epoch+1}/{num_epochs}], Discriminator Loss: {d_loss.item():.4f}, Generator Loss: {g_loss.item():.4f}")
 
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Train CGAN model.')
+    parser.add_argument('--data_file_path', type=str, required=False, default='data/incremental_data.npy', help='Path to the data file.')
+    args = parser.parse_args()
+    
+    # Hyperparameters
+    latent_size = 2
+    hidden_size = 64
+    output_size = 2
+    condition_size = 2
+    num_epochs = 300
+    batch_size = 100
+    learning_rate = 0.0002
+
+    # Load dataset
+    dataset = RobotDataset(args.data_file_path)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+    # Initialize models
+    generator = Generator(latent_size, hidden_size, output_size, condition_size)
+    discriminator = Discriminator(output_size, hidden_size, 1, condition_size)
+
+    # Optimizers
+    optimizer_g = optim.Adam(generator.parameters(), lr=learning_rate)
+    optimizer_d = optim.Adam(discriminator.parameters(), lr=learning_rate)
+
+    # Initialize SummaryWriter
+    folder = os.path.join("logs", f"cgan_model_{os.path.basename(args.data_file_path).split('.')[0]}")
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
+    writer = SummaryWriter(folder)
+    train(dataloader, generator, discriminator, optimizer_g, optimizer_d, num_epochs, writer)
+    
     # Save models
-    generator_model_name = f"generator_{os.path.basename(data_file_path).split('.')[0]}.pth"
-    discriminator_model_name = f"discriminator_{os.path.basename(data_file_path).split('.')[0]}.pth"
+    generator_model_name = f"generator_{os.path.basename(args.data_file_path).split('.')[0]}.pth"
+    discriminator_model_name = f"discriminator_{os.path.basename(args.data_file_path).split('.')[0]}.pth"
 
     generator_model_path = os.path.join(folder, generator_model_name)
     discriminator_model_path = os.path.join(folder, discriminator_model_name)
@@ -147,9 +155,3 @@ def train(data_file_path):
     print(f"Discriminator model saved at {discriminator_model_path}")
     
     writer.close()
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Train CGAN model.')
-    parser.add_argument('--data_file_path', type=str, required=False, default='data/incremental_data.npy', help='Path to the data file.')
-    args = parser.parse_args()
-    train(args.data_file_path)
