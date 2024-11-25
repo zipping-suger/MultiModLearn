@@ -74,12 +74,12 @@ class TwoLinkRobotIK:
         Returns:
             tuple: Optimized joint angles (theta1, theta2) in radians.
         """
+        # Convert target position to a tensor float32
+        target = torch.tensor(target_position, dtype=torch.float32)
+        
         # Initialize joint angles (theta1, theta2) as learnable parameters
         theta1 = torch.tensor(seed[0], dtype=torch.float32, requires_grad=True)
         theta2 = torch.tensor(seed[1], dtype=torch.float32, requires_grad=True)
-
-        # Target position as a tensor
-        target = torch.tensor(target_position)
 
         # Optimizer
         optimizer = torch.optim.Adam([theta1, theta2], lr=learning_rate)
@@ -157,7 +157,7 @@ class TwoLinkRobotIK:
 
         return solutions
     
-    def sample_from_workspace(self, num_samples, square = True):
+    def sample_from_workspace(self, num_samples, square=True):
         """
         Sample random positions from the workspace.
 
@@ -165,7 +165,7 @@ class TwoLinkRobotIK:
             num_samples (int): Number of samples to generate.
 
         Returns:
-            np.ndarray: Array of sampled positions (x, y).
+            np.ndarray: Array of sampled positions (x, y) in float32.
         """
         samples = []
         x_range = (-self.link1_length - self.link2_length, self.link1_length + self.link2_length)
@@ -180,7 +180,27 @@ class TwoLinkRobotIK:
                     samples.append((target_x, target_y))
                     break
         
-        return np.array(samples)
+        return np.array(samples, dtype=np.float32)
+    
+    def is_valid_workspace_point(self, point, square=True):
+        """
+        Check if a point is within the workspace.
+
+        Parameters:
+            point (tuple): Position (x, y) to check.
+
+        Returns:
+            bool: True if the point is within the workspace, False otherwise.
+        """
+        if square:
+            x, y = point
+            return x >= -self.link1_length - self.link2_length and x <= self.link1_length + self.link2_length and y >= -self.link1_length - self.link2_length and y <= self.link1_length + self.link2_length
+        
+        else:
+            x, y = point
+            distance = np.sqrt(x**2 + y**2)
+            return distance <= (self.link1_length + self.link2_length) and distance >= abs(self.link1_length - self.link2_length)
+        
     
     def evaluate(self, theta1, theta2, target_x, target_y):
         """

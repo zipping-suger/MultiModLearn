@@ -35,12 +35,14 @@ def load_model(model_type):
         # model.load_state_dict(torch.load('logs/mlp_model_gradient_data/mlp_model_model_gradient_data.pth', weights_only=True))
         # model.load_state_dict(torch.load('logs/mlp_model_gradient_data_rs/mlp_model_gradient_data_rs.pth', weights_only=True))
         model.load_state_dict(torch.load('logs/mlp_model_direct_differentiable/mlp_model_direct_differentiable.pth', weights_only=True))
+        # model.load_state_dict(torch.load('logs/mlp_model_incremental_data/mlp_model_incremental_data.pth', weights_only=True))
         model.eval()
         return model
     elif model_type == 'cgan':
         generator = Generator(latent_size, hidden_size, output_size, condition_size)
         # generator.load_state_dict(torch.load('logs/cgan_model_gradient_data/cgan_model_gradient_data.pth', weights_only=True))
-        generator.load_state_dict(torch.load('logs/cgan_model_gradient_data_rs/generator_gradient_data_rs.pth', weights_only=True))
+        # generator.load_state_dict(torch.load('logs/cgan_model_gradient_data_rs/generator_gradient_data_rs.pth', weights_only=True))
+        generator.load_state_dict(torch.load('logs/cgan_model_incremental_data/generator_incremental_data.pth', weights_only=True))
         generator.eval()
         return generator
     elif model_type == 'cvae':
@@ -92,11 +94,16 @@ def ik_methods(method, target_position):
 def main(method_type):
     global mlp_model, cgan_model, cvae_model, reinforce_model, energy_model
 
-    mlp_model = load_model('mlp')
-    cgan_model = load_model('cgan')
-    cvae_model = load_model('cvae')
-    reinforce_model = load_model('reinforce')
-    energy_model = load_model('ibc')
+    if method_type == 'mlp':
+        mlp_model = load_model('mlp')
+    elif method_type == 'cgan':
+        cgan_model = load_model('cgan')
+    elif method_type == 'cvae':
+        cvae_model = load_model('cvae')
+    elif method_type == 'reinforce':
+        reinforce_model = load_model('reinforce')
+    elif method_type == 'ibc':
+        energy_model = load_model('ibc')
 
     # Initialize plot
     fig, ax = plt.subplots(figsize=(6, 6))

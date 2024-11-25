@@ -6,6 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 import os
 import sys
+import argparse
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import shutil
 
@@ -49,6 +50,10 @@ def train(model, dataloader, criterion, optimizer, scheduler, num_epochs, writer
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}, LR: {scheduler.get_last_lr()[0]:.6f}')
 
 def main():
+    parser = argparse.ArgumentParser(description='Train MLP model.')
+    parser.add_argument('--data_file_path', type=str, required=True, help='Path to the data file')
+    args = parser.parse_args()
+
     # Hyperparameters
     input_size = 2
     hidden_size = 64
@@ -58,8 +63,7 @@ def main():
     learning_rate = 0.001
 
     # Load dataset
-    data_file_path = 'data/gradient_data.npy'
-    dataset = RobotDataset(data_file_path)
+    dataset = RobotDataset(args.data_file_path)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     # Initialize model, criterion and optimizer
@@ -69,7 +73,7 @@ def main():
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
 
     # Setup TensorBoard
-    folder = os.path.join("logs",  f"mlp_model_{os.path.basename(data_file_path).split('.')[0]}") # use model and data name
+    folder = os.path.join("logs",  f"mlp_model_{os.path.basename(args.data_file_path).split('.')[0]}") # use model and data name
     # clear the folder
     if os.path.exists(folder):
         shutil.rmtree(folder)
@@ -79,7 +83,7 @@ def main():
     train(model, dataloader, criterion, optimizer, scheduler, num_epochs, writer)
 
     # Save the model with a name that includes the data it trained on
-    model_name = f"mlp_model_{os.path.basename(data_file_path).split('.')[0]}.pth"
+    model_name = f"mlp_model_{os.path.basename(args.data_file_path).split('.')[0]}.pth"
     
     # Save the model under the folder in the logs directory
     model_path = os.path.join(folder, model_name)

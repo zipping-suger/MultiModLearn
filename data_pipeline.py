@@ -1,20 +1,20 @@
 import torch
 from torch.utils.data import Dataset
-
 import numpy as np
 from robot import TwoLinkRobotIK
 import time
 import os
+from tqdm import tqdm
 import scipy.spatial
+import argparse
 
 def generate_data_analytical(robot: TwoLinkRobotIK, num_samples: int):
     start_time = time.time()
     data = []
     
-    # Sample positions from the workspace
     samples = robot.sample_from_workspace(num_samples)
     
-    for target_x, target_y in samples:
+    for target_x, target_y in tqdm(samples, desc="Generating analytical data"):
         solutions = robot.solve_ik_analytical(target_x, target_y)
         for theta1, theta2 in solutions:
             data.append([target_x, target_y, theta1, theta2])
@@ -27,10 +27,9 @@ def generate_data_gradient_descent(robot: TwoLinkRobotIK, num_samples: int, fixe
     start_time = time.time()
     data = []
     
-    # Sample positions from the workspace
     samples = robot.sample_from_workspace(num_samples)
     
-    for target_x, target_y in samples:
+    for target_x, target_y in tqdm(samples, desc="Generating gradient descent data"):
         if fixed_seed:
             theta1, theta2 = robot.solve_ik_gradient_descent((target_x, target_y))
         else:
@@ -44,74 +43,102 @@ def generate_data_gradient_descent(robot: TwoLinkRobotIK, num_samples: int, fixe
     print(f"Time taken to generate {num_samples} samples using gradient descent: {end_time - start_time:.2f} seconds")
     return np.array(data)
 
-# TODO Explore the space using rapid exploring tree (RRT), and use the previous solution as the starting seed
-def generate_data_rrt(robot: TwoLinkRobotIK, num_samples: int):
-    pass
+def rrt_sample_workspace(robot: TwoLinkRobotIK, num_samples, max_iterations, step_size):
+    """Generate an RRT graph structure in the workspace."""
+    from collections import defaultdict
 
-# TODO filter does not work
+    graph = defaultdict(list)  # Adjacency list representation of the graph
+    nodes = [(0, 0)]  # Start at the center of the workspace
+    for _ in range(max_iterations):
+        random_point = robot.sample_from_workspace(1)[0]
+        nearest_idx = np.argmin([np.linalg.norm(np.array(random_point) - np.array(node)) for node in nodes])
+        nearest_node = nodes[nearest_idx]
+        direction = np.array(random_point) - np.array(nearest_node)
+        direction = direction / np.linalg.norm(direction) * step_size
+        new_point = tuple(np.array(nearest_node) + direction)
+
+        # Check if the new point is valid
+        if robot.is_valid_workspace_point(new_point):
+            nodes.append(new_point)
+            graph[nearest_node].append(new_point)
+            graph[new_point].append(nearest_node)
+
+        if len(nodes) >= num_samples:
+            break
+
+    return nodes, graph
+
+def generate_data_incremental_sampling(robot: TwoLinkRobotIK, num_samples, max_iterations=1000, step_size=0.3):
+    """Generate IK data using RRT sampling and incremental seeding."""
+    start_time = time.time()
+    data = []
+
+    # Step 1: Generate RRT graph structure
+    nodes, graph = rrt_sample_workspace(robot, num_samples, max_iterations, step_size)
+
+    # Step 2: Solve IK incrementally, propagating solutions
+    solved_seeds = {nodes[0]: (0, 0)}  # Start with the center seed
+    visited = set()
+    queue = [nodes[0]]
+
+    with tqdm(total=len(nodes), desc="Generating incremental sampling data") as pbar:
+        while queue:
+            current_node = queue.pop(0)
+            visited.add(current_node)
+
+            current_seed = solved_seeds[current_node]
+            for neighbor in graph[current_node]:
+                if neighbor not in visited:
+                    theta1, theta2 = robot.solve_ik_gradient_descent(neighbor, seed=current_seed)
+                    data.append([*neighbor, theta1, theta2])
+                    solved_seeds[neighbor] = (theta1, theta2)
+                    queue.append(neighbor)
+            pbar.update(1)
+
+    print(f"Data generation completed in {time.time() - start_time:.2f} seconds.")
+    return data
+    
+
 def filter_conflicts(data: np.ndarray, radius: float = 1, epsilon: float = 0.1) -> np.ndarray:
-    """
-    Detect and reject conflicting samples in the dataset based on local neighborhood interpolation.
-    
-    Args:
-        data: numpy array of shape (N, 4) containing [x, y, theta1, theta2] for each sample
-        radius: radius for finding neighbors
-        epsilon: threshold for conflict detection
-    
-    Returns:
-        filtered_data: numpy array containing non-conflicting samples
-    """
-    # Separate positions and angles
-    positions = data[:, :2]  # x, y coordinates
-    angles = data[:, 2:]    # theta1, theta2 angles
-    
-    # Build KD-tree for efficient neighbor search
+    positions = data[:, :2]
+    angles = data[:, 2:]
     tree = scipy.spatial.cKDTree(positions)
-    
-    # Initialize array to track rejected samples
     rejected = np.zeros(len(data), dtype=bool)
-    
-    # Calculate metrics for each sample
     metrics = np.zeros(len(data))
     
     for m in range(len(data)):
-        # Find neighbors within radius
         neighbors = tree.query_ball_point(positions[m], radius)
-        
-        if len(neighbors) < 2:  # Skip if not enough neighbors
+        if len(neighbors) < 2:
             continue
-            
-        # Calculate interpolated position and target
         weights = 1.0 / np.maximum(
             np.linalg.norm(positions[neighbors] - positions[m], axis=1),
             1e-6
         )
         weights = weights / np.sum(weights)
-        
         p_avg = np.average(positions[neighbors], weights=weights, axis=0)
         t_avg = np.average(angles[neighbors], weights=weights, axis=0)
-        
-        # Calculate metric (using L2 norm of the difference between actual and interpolated angles)
         metrics[m] = np.linalg.norm(angles[m] - t_avg)
     
-    # Compute average metric
     valid_metrics = metrics[metrics > 0]
     if len(valid_metrics) == 0:
         return data
     
     metric_avg = np.mean(valid_metrics)
     
-    # Reject samples based on metric threshold
     for m in range(len(data)):
         if metrics[m] > metric_avg + epsilon:
-            # Reject sample and its neighbors
             neighbors = tree.query_ball_point(positions[m], radius)
             rejected[neighbors] = True
     
-    # Return non-rejected samples
     return data[~rejected]
 
-
+def visualize_data(data):
+    import matplotlib.pyplot as plt
+    data = np.array(data)
+    fig, ax = plt.subplots()
+    ax.scatter(data[:, 0], data[:, 1], c='blue', label='Target Position')
+    ax.set_aspect('equal')
+    plt.show()
 
 class RobotDataset(Dataset):
     def __init__(self, file_path):
@@ -128,48 +155,31 @@ class RobotDataset(Dataset):
             'angles': torch.tensor([theta1, theta2], dtype=torch.float32)
         }
 
-if __name__ == "__main__":
-    # Robot parameters
-    L1 = 3.0  # Length of link 1
-    L2 = 3.0  # Length of link 2
+def main():
+    parser = argparse.ArgumentParser(description="Generate robot data using different methods")
+    parser.add_argument('--method', type=str, choices=['analytical', 'gradient', 'incremental'], required=True, help="Method to generate data")
+    parser.add_argument('--num_samples', type=int, default=5000, help="Number of samples to generate")
+    parser.add_argument('--save_path', type=str, default="data/", help="Path to save the generated data")
+    parser.add_argument('--fixed_seed', action='store_true', help="Use fixed seed for gradient descent method")
+    args = parser.parse_args()
 
-    # Create the robot
+    L1 = 3.0
+    L2 = 3.0
     robot = TwoLinkRobotIK(L1, L2)
 
-    # Data generation parameters
-    num_samples = 2000
-    
-    save_path = "data/"
-    
-    # Create the save path if it does not exist
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
+    if not os.path.exists(args.save_path):
+        os.makedirs(args.save_path)
 
-    # # Generate data using analytical solutions
-    # analytical_data = generate_data_analytical(robot, num_samples)
-    # print(f"Generated {len(analytical_data)} samples using analytical solutions.")
+    if args.method == 'analytical':
+        data = generate_data_analytical(robot, args.num_samples)
+        np.save(f"{args.save_path}analytical_data.npy", data)
+    elif args.method == 'gradient':
+        data = generate_data_gradient_descent(robot, args.num_samples, fixed_seed=args.fixed_seed)
+        np.save(f"{args.save_path}gradient_data.npy", data)
+    elif args.method == 'incremental':
+        data = generate_data_incremental_sampling(robot, args.num_samples)
+        np.save(f"{args.save_path}incremental_data.npy", data)
+        visualize_data(data)
 
-    # Generate data using gradient descent
-    gradient_data = generate_data_gradient_descent(robot, num_samples, fixed_seed=False)
-    print(f"Generated {len(gradient_data)} samples using gradient descent.")
-
-    # Save data to files
-    # np.save(f"{save_path}analytical_data.npy", analytical_data)
-    np.save(f"{save_path}gradient_data_rs.npy", gradient_data)
-
-
-    # # Test filtering function
-    # filtered_data = filter_conflicts(analytical_data)
-    # print(f"Filtered data shape: {filtered_data.shape}")
-    # print(f"Original data shape: {analytical_data.shape}")
-    # print(f"Number of rejected samples: {len(analytical_data) - len(filtered_data)}")
-    
-    # Test gradient descent with filtered data
-    filtered_gradient_data = filter_conflicts(gradient_data)
-    print(f"Filtered gradient data shape: {filtered_gradient_data.shape}")
-    print(f"Original gradient data shape: {gradient_data.shape}")
-    print(f"Number of rejected samples: {len(gradient_data) - len(filtered_gradient_data)}")
-    
-    # Save filtered data to files
-    # np.save(f"{save_path}filtered_analytical_data.npy", filtered_data)
-    np.save(f"{save_path}filtered_gradient_data_rs.npy", filtered_gradient_data)
+if __name__ == "__main__":
+    main()

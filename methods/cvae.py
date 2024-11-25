@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-
+import argparse
 import os
 import shutil
 import sys
@@ -74,6 +74,10 @@ def loss_function(x_recon, x, mu, logvar):
 
 # Example usage
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Train a CVAE model.')
+    parser.add_argument('--data_file_path', type=str, required=True, help='Path to the data file.')
+    args = parser.parse_args()
+
     # Hyperparameters
     input_dim = 2
     condition_dim = 2
@@ -88,12 +92,11 @@ if __name__ == "__main__":
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     
     # Load dataset
-    data_file_path = 'data/gradient_data_rs.npy'
-    dataset = RobotDataset(data_file_path)
+    dataset = RobotDataset(args.data_file_path)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     
     # Initialize SummaryWriter
-    folder = os.path.join("logs", f"cvae_model_{os.path.basename(data_file_path).split('.')[0]}")
+    folder = os.path.join("logs", f"cvae_model_{os.path.basename(args.data_file_path).split('.')[0]}")
     if os.path.exists(folder):
         shutil.rmtree(folder)
     writer = SummaryWriter(folder)
@@ -118,7 +121,7 @@ if __name__ == "__main__":
          print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
          
     # Save the model with a name that includes the data it trained on
-    model_name = f"cvae_model_{os.path.basename(data_file_path).split('.')[0]}.pth"
+    model_name = f"cvae_model_{os.path.basename(args.data_file_path).split('.')[0]}.pth"
          
     # Save the model under the folder in the logs directory
     model_path = os.path.join(folder, model_name)
@@ -126,5 +129,3 @@ if __name__ == "__main__":
     print(f"Model saved at {model_path}")
     
     writer.close()
-    
-      

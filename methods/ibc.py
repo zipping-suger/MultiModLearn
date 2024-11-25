@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-
+import argparse
 import os
 import shutil
 import sys
@@ -17,6 +17,8 @@ class EnergyModel(nn.Module):
         super(EnergyModel, self).__init__()
         self.energy_net = nn.Sequential(
             nn.Linear(input_size + action_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
@@ -114,11 +116,15 @@ def infer_angles(energy_model, target_position, y_min, y_max, samples=16384, ite
 
 # Main function
 def main():
+    parser = argparse.ArgumentParser(description='Train Energy-based Model')
+    parser.add_argument('--data_file_path', type=str, required=True, help='Path to the data file')
+    args = parser.parse_args()
+
     # Hyperparameters
     input_size = 2  # x, y positions
     action_size = 2  # joint angles
     hidden_size = 64
-    num_epochs = 50
+    num_epochs = 100
     batch_size = 32
     neg_count = 256
     learning_rate = 0.001
@@ -128,8 +134,7 @@ def main():
     y_max = torch.tensor([3.14, 3.14])
 
     # Load dataset
-    data_file_path = 'data/gradient_data_rs.npy'
-    dataset = RobotDataset(data_file_path)
+    dataset = RobotDataset(args.data_file_path)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     # Initialize model, optimizer, scheduler
@@ -139,7 +144,7 @@ def main():
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
     # Setup TensorBoard
-    folder = os.path.join("logs", f"ibc_model_{os.path.basename(data_file_path).split('.')[0]}")
+    folder = os.path.join("logs", f"ibc_model_{os.path.basename(args.data_file_path).split('.')[0]}")
     if os.path.exists(folder):
         shutil.rmtree(folder)
     writer = SummaryWriter(folder)
@@ -148,7 +153,7 @@ def main():
     train(model, dataloader, info_nce_loss, optimizer, scheduler, num_epochs, writer, y_min.to(device), y_max.to(device), neg_count, device)
 
     # Save the trained model
-    model_name = f"ibc_model_{os.path.basename(data_file_path).split('.')[0]}.pth"
+    model_name = f"ibc_model_{os.path.basename(args.data_file_path).split('.')[0]}.pth"
     model_path = os.path.join(folder, model_name)
     torch.save(model.state_dict(), model_path)
     print(f"Model saved at {model_path}")

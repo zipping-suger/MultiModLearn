@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-
+import argparse
 import os
 import shutil
 import sys
@@ -65,7 +65,7 @@ def compute_generator_loss(discriminator, fake_samples, condition):
     loss = -torch.mean(torch.log(torch.sigmoid(d_fake) + 1e-10))
     return loss
 
-def train():
+def train(data_file_path):
     # Hyperparameters
     latent_size = 2
     hidden_size = 64
@@ -76,7 +76,6 @@ def train():
     learning_rate = 0.0002
 
     # Load dataset
-    data_file_path = 'data/gradient_data.npy'
     dataset = RobotDataset(data_file_path)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
@@ -89,7 +88,7 @@ def train():
     optimizer_d = optim.Adam(discriminator.parameters(), lr=learning_rate)
 
     # Initialize SummaryWriter
-    folder = os.path.join("../logs", f"cgan_model_{os.path.basename(data_file_path).split('.')[0]}")
+    folder = os.path.join("logs", f"cgan_model_{os.path.basename(data_file_path).split('.')[0]}")
     if os.path.exists(folder):
         shutil.rmtree(folder)
     writer = SummaryWriter(folder)
@@ -103,7 +102,7 @@ def train():
             # Step 1: Update discriminator
             for _ in range(20):  # Can adjust number of discriminator updates per generator update
                 # Draw noise samples
-                z = torch.randn(batch_size, latent_size)
+                z = torch.randn(position.size(0), latent_size)
                 
                 # Generate fake samples
                 fake_angles = generator(z, position)
@@ -118,7 +117,7 @@ def train():
                 optimizer_d.step()
 
             # Step 2 & 3: Update generator
-            z = torch.randn(batch_size, latent_size)
+            z = torch.randn(position.size(0), latent_size)
             fake_angles = generator(z, position)
             g_loss = compute_generator_loss(discriminator, fake_angles, position)
             
@@ -150,4 +149,7 @@ def train():
     writer.close()
 
 if __name__ == "__main__":
-    train()
+    parser = argparse.ArgumentParser(description='Train CGAN model.')
+    parser.add_argument('--data_file_path', type=str, required=False, default='data/incremental_data.npy', help='Path to the data file.')
+    args = parser.parse_args()
+    train(args.data_file_path)
