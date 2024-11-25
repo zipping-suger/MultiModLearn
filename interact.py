@@ -43,7 +43,7 @@ def load_model(model_type):
         # generator.load_state_dict(torch.load('logs/cgan_model_gradient_data/cgan_model_gradient_data.pth', weights_only=True))
         # generator.load_state_dict(torch.load('logs/cgan_model_gradient_data_rs/generator_gradient_data_rs.pth', weights_only=True))
         # generator.load_state_dict(torch.load('logs/cgan_model_incremental_data/generator_incremental_data.pth', weights_only=True))
-        generator.load_state_dict(torch.load('logs/cgan_training/generator_4.pt', weights_only=True))
+        generator.load_state_dict(torch.load('logs/cgan_training_replace/generator_4.pt', weights_only=True))
         generator.eval()
         return generator
     elif model_type == 'cvae':
