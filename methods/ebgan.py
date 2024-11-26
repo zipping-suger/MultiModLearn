@@ -75,7 +75,7 @@ def train(dataloader, generator, energy_model, optimizer_g, optimizer_e, schedul
             angles = batch['angles'].float().to(device)
             
             # Step 1: Update energy model
-            for _ in range(5):  # Can adjust number of energy model updates per generator update   
+            for _ in range(20):  # Can adjust number of energy model updates per generator update, 5 does not work well   
                              
                 # Generate counter samples by random sampling, works better than generator
                 counter_samples = generate_counter_samples_rand(y_min, y_max, position.size(0), neg_count, device)

@@ -177,7 +177,7 @@ def main():
         np.save(f"{args.save_path}analytical_data.npy", data)
     elif args.method == 'gradient':
         data = generate_data_gradient_descent(robot, args.num_samples, fixed_seed=False)
-        np.save(f"{args.save_path}gradient_data.npy", data)
+        np.save(f"{args.save_path}gradient_data_rs.npy", data)
     elif args.method == 'incremental':
         data = generate_data_incremental_sampling(robot, args.num_samples)
         np.save(f"{args.save_path}incremental_data.npy", data)
