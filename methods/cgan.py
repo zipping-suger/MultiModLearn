@@ -110,7 +110,7 @@ def train(dataloader, generator, discriminator, optimizer_g, optimizer_d, num_ep
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train CGAN model.')
-    parser.add_argument('--data_file_path', type=str, required=False, default='data/incremental_data.npy', help='Path to the data file.')
+    parser.add_argument('--data_file_path', type=str, required=False, default='data/gradient_data.npy', help='Path to the data file.')
     args = parser.parse_args()
     
     # Hyperparameters

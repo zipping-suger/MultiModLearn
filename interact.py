@@ -34,18 +34,19 @@ def load_model(model_type):
     if model_type == 'mlp':
         model = MLP(input_size, hidden_size, output_size)
         # model.load_state_dict(torch.load('logs/mlp_model_gradient_data/mlp_model_model_gradient_data.pth', weights_only=True))
-        # model.load_state_dict(torch.load('logs/mlp_model_gradient_data_rs/mlp_model_gradient_data_rs.pth', weights_only=True))
-        model.load_state_dict(torch.load('logs/mlp_model_direct_differentiable/mlp_model_direct_differentiable.pth', weights_only=True))
+        model.load_state_dict(torch.load('logs/mlp_model_gradient_data_rs/mlp_model_gradient_data_rs.pth', weights_only=True))
+        # model.load_state_dict(torch.load('logs/mlp_model_direct_differentiable/mlp_model_direct_differentiable.pth', weights_only=True))
         # model.load_state_dict(torch.load('logs/mlp_model_incremental_data/mlp_model_incremental_data.pth', weights_only=True))
         model.eval()
         return model
     elif model_type == 'cgan':
         generator = Generator(latent_size, hidden_size, output_size, condition_size)
-        # generator.load_state_dict(torch.load('logs/cgan_model_gradient_data/cgan_model_gradient_data.pth', weights_only=True))
-        # generator.load_state_dict(torch.load('logs/cgan_model_gradient_data_rs/generator_gradient_data_rs.pth', weights_only=True))
+        # generator.load_state_dict(torch.load('logs/cgan_model_gradient_data/generator_gradient_data.pth', weights_only=True))
+        generator.load_state_dict(torch.load('logs/cgan_model_gradient_data_rs/generator_gradient_data_rs.pth', weights_only=True))
         # generator.load_state_dict(torch.load('logs/cgan_model_incremental_data/generator_incremental_data.pth', weights_only=True))
+        # generator.load_state_dict(torch.load('logs/cgan_model_analytical_data/generator_analytical_data.pth', weights_only=True))
         # generator.load_state_dict(torch.load('logs/cgan_training_replace/generator_4.pt', weights_only=True))
-        generator.load_state_dict(torch.load('logs/cgan_training_append/generator_4.pt', weights_only=True))
+        # generator.load_state_dict(torch.load('logs/cgan_training_append/generator_4.pt', weights_only=True))
         generator.eval()
         return generator
     elif model_type == 'cvae':
@@ -173,7 +174,7 @@ def main(method_type):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='2-Link Robotic Arm Inverse Kinematics')
-    parser.add_argument('--method', type=str, default='mlp', choices=['gradient_descent', 'mlp', 'cgan', 'cvae', 'reinforce', 'ibc', 'ebgan'], help='IK method to use')
+    parser.add_argument('--method', type=str, default='cgan', choices=['gradient_descent', 'mlp', 'cgan', 'cvae', 'reinforce', 'ibc', 'ebgan'], help='IK method to use')
     args = parser.parse_args()
     print(f"Using {args.method} method for inverse kinematics")
     main(args.method)
