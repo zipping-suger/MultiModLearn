@@ -5,3 +5,7 @@ matplotlib
 tensorboard
 argparse
 tqdm
+jupyter notebook
+pandas
+seaborn
+scikit-learn

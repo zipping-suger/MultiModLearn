@@ -3,7 +3,7 @@ import subprocess
 
 def main():
     parser = argparse.ArgumentParser(description='Run a specific method script')
-    parser.add_argument('--method', type=str, required=True, choices=['mlp', 'cgan', 'cvae', 'reinforce', 'ibc', 'direct_supervise'], help='Method to run')
+    parser.add_argument('--method', type=str, required=False, default='ibc', choices=['mlp', 'cgan', 'cvae', 'reinforce', 'ibc', 'direct_supervise'], help='Method to run')
     parser.add_argument('--data_file_path', type=str, required=False, default='data/gradient_data_rs.npy', help='Path to the data file')
     args = parser.parse_args()
 

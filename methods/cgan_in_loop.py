@@ -48,7 +48,7 @@ def main():
     generated_data_size = 2000
     iterations = 5
     
-    replace_data = True # Set to True if you want to replace the initial data with the generated data
+    replace_data = False # Set to True if you want to replace the initial data with the generated data
     # otherwise, the generated data will be appended to the initial data
 
 

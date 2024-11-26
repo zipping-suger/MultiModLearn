@@ -141,23 +141,11 @@ def visualize_data(data):
     plt.show()
 
 class RobotDataset(Dataset):
-    def __init__(self, file_path):
-        self.data = np.load(file_path)
-    
-    def __len__(self):
-        return len(self.data)
-    
-    def __getitem__(self, idx):
-        sample = self.data[idx]
-        target_x, target_y, theta1, theta2 = sample
-        return {
-            'position': torch.tensor([target_x, target_y], dtype=torch.float32),
-            'angles': torch.tensor([theta1, theta2], dtype=torch.float32)
-        }
-        
-class RobotDataset(Dataset):
-    def __init__(self, data):
-        self.data = data
+    def __init__(self, data_or_path):
+        if isinstance(data_or_path, str):
+            self.data = np.load(data_or_path)
+        else:
+            self.data = data_or_path
     
     def __len__(self):
         return len(self.data)
@@ -173,9 +161,8 @@ class RobotDataset(Dataset):
 def main():
     parser = argparse.ArgumentParser(description="Generate robot data using different methods")
     parser.add_argument('--method', type=str, choices=['analytical', 'gradient', 'incremental'], required=True, help="Method to generate data")
-    parser.add_argument('--num_samples', type=int, default=5000, help="Number of samples to generate")
+    parser.add_argument('--num_samples', type=int, default=2000, help="Number of samples to generate")
     parser.add_argument('--save_path', type=str, default="data/", help="Path to save the generated data")
-    parser.add_argument('--fixed_seed', action='store_true', help="Use fixed seed for gradient descent method")
     args = parser.parse_args()
 
     L1 = 3.0
@@ -189,7 +176,7 @@ def main():
         data = generate_data_analytical(robot, args.num_samples)
         np.save(f"{args.save_path}analytical_data.npy", data)
     elif args.method == 'gradient':
-        data = generate_data_gradient_descent(robot, args.num_samples, fixed_seed=args.fixed_seed)
+        data = generate_data_gradient_descent(robot, args.num_samples, fixed_seed=False)
         np.save(f"{args.save_path}gradient_data.npy", data)
     elif args.method == 'incremental':
         data = generate_data_incremental_sampling(robot, args.num_samples)

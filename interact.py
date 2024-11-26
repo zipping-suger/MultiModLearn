@@ -6,7 +6,8 @@ from methods.mlp import MLP
 from methods.cgan import Generator
 from methods.cvae import CVAE 
 from methods.reinforce import PolicyNetwork
-from methods.ibc import EnergyModel, infer_angles
+from methods.ibc import EnergyModel
+from utils import infer_angles
 import argparse
 
 # Robot parameters
@@ -41,9 +42,9 @@ def load_model(model_type):
     elif model_type == 'cgan':
         generator = Generator(latent_size, hidden_size, output_size, condition_size)
         # generator.load_state_dict(torch.load('logs/cgan_model_gradient_data/cgan_model_gradient_data.pth', weights_only=True))
-        # generator.load_state_dict(torch.load('logs/cgan_model_gradient_data_rs/generator_gradient_data_rs.pth', weights_only=True))
+        generator.load_state_dict(torch.load('logs/cgan_model_gradient_data_rs/generator_gradient_data_rs.pth', weights_only=True))
         # generator.load_state_dict(torch.load('logs/cgan_model_incremental_data/generator_incremental_data.pth', weights_only=True))
-        generator.load_state_dict(torch.load('logs/cgan_training_replace/generator_4.pt', weights_only=True))
+        # generator.load_state_dict(torch.load('logs/cgan_training_replace/generator_4.pt', weights_only=True))
         generator.eval()
         return generator
     elif model_type == 'cvae':
@@ -64,7 +65,14 @@ def load_model(model_type):
         energy_model.eval()
         energy_model.to('cuda')
         return energy_model
-
+    elif model_type == 'ebgan':
+        ebgan_model = Generator(latent_size, hidden_size, output_size, condition_size)
+        ebgan_model.load_state_dict(torch.load('logs/ebgan_model_gradient_data_rs/generator_gradient_data_rs.pth', weights_only=True))
+        # ebgan_model.load_state_dict(torch.load('logs/ebgan2_model_gradient_data_rs/generator_gradient_data_rs.pth', weights_only=True))
+        ebgan_model.eval()
+        ebgan_model.to('cuda')
+        return ebgan_model
+  
 def ik_methods(method, target_position):
     if method == 'gradient_descent':
         target_position = [float(target_position[0]), float(target_position[1])]
@@ -91,9 +99,16 @@ def ik_methods(method, target_position):
         y_max = torch.tensor([3.14, 3.14], device='cuda')
         inferred_angles = infer_angles(energy_model, target_tensor, y_min, y_max)
         return inferred_angles.cpu().numpy()[0]
+    elif method == 'ebgan':
+        latent_vector = torch.randn(1, latent_size, device='cuda')
+        condition = torch.tensor(target_position, dtype=torch.float32).unsqueeze(0).to('cuda')
+        return ebgan_model(latent_vector, condition).detach().cpu().numpy()[0]
+    else:
+        raise ValueError("Invalid method type")
+
 
 def main(method_type):
-    global mlp_model, cgan_model, cvae_model, reinforce_model, energy_model
+    global mlp_model, cgan_model, cvae_model, reinforce_model, energy_model, ebgan_model
 
     if method_type == 'mlp':
         mlp_model = load_model('mlp')
@@ -105,6 +120,8 @@ def main(method_type):
         reinforce_model = load_model('reinforce')
     elif method_type == 'ibc':
         energy_model = load_model('ibc')
+    elif method_type == 'ebgan':
+        ebgan_model = load_model('ebgan')
 
     # Initialize plot
     fig, ax = plt.subplots(figsize=(6, 6))
@@ -155,7 +172,7 @@ def main(method_type):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='2-Link Robotic Arm Inverse Kinematics')
-    parser.add_argument('--method', type=str, default='gradient_descent', choices=['gradient_descent', 'mlp', 'cgan', 'cvae', 'reinforce', 'ibc'], help='IK method to use')
+    parser.add_argument('--method', type=str, default='ebgan', choices=['gradient_descent', 'mlp', 'cgan', 'cvae', 'reinforce', 'ibc', 'ebgan'], help='IK method to use')
     args = parser.parse_args()
     print(f"Using {args.method} method for inverse kinematics")
     main(args.method)

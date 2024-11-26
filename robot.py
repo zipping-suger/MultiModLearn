@@ -200,6 +200,33 @@ class TwoLinkRobotIK:
             x, y = point
             distance = np.sqrt(x**2 + y**2)
             return distance <= (self.link1_length + self.link2_length) and distance >= abs(self.link1_length - self.link2_length)
+    
+    def get_conjugate_angles(self, angles):
+        """
+        Get the conjugate angles for the 2-link robotic arm which results in the same end effector position.
+
+        Parameters:
+            angles (tuple): Joint angles (theta1, theta2) in radians.
+            
+        Returns:
+            tuple: Conjugate joint angles (theta1, theta2) in radians.
+        """
+        theta1, theta2 = angles
+        
+        # Compute the end-effector position using forward kinematics
+        end_effector = self.forward_kinematics_np(theta1, theta2)
+        
+        # Solve the inverse kinematics to get all possible angles
+        solutions = self.solve_ik_analytical(end_effector[0], end_effector[1])
+        
+        # Filter out the original angles from the solutions
+        for solution in solutions:
+            if not np.isclose(solution, angles).all():
+                return solution
+        
+        # If no conjugate angles found, return None
+        return None
+        
         
     
     def evaluate(self, theta1, theta2, target_x, target_y):
