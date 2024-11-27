@@ -7,7 +7,7 @@ from methods.cgan import Generator
 from methods.cvae import CVAE 
 from methods.reinforce import PolicyNetwork
 from methods.ibc import EnergyModel
-from utils import infer_angles
+from utils import ebm_infer
 import argparse
 
 # Robot parameters
@@ -99,7 +99,7 @@ def ik_methods(method, target_position):
         target_tensor = torch.tensor(target_position, dtype=torch.float32).unsqueeze(0).to('cuda')
         y_min = torch.tensor([-3.14, -3.14], device='cuda')
         y_max = torch.tensor([3.14, 3.14], device='cuda')
-        inferred_angles = infer_angles(energy_model, target_tensor, y_min, y_max)
+        inferred_angles = ebm_infer(energy_model, target_tensor, y_min, y_max)
         return inferred_angles.cpu().numpy()[0]
     elif method == 'ebgan':
         latent_vector = torch.randn(1, latent_size, device='cuda')

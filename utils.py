@@ -3,7 +3,7 @@ from methods.ibc import EnergyModel
 from methods.cgan import Discriminator
 
 # Derivative-free optimizer for inference
-def infer_angles(energy_model, target_position, y_min, y_max, samples=16384, iterations=3, sigma_init=0.33, scale=0.5):
+def ebm_infer(energy_model, target_position, y_min, y_max, samples=16384, iterations=3, sigma_init=0.33, scale=0.5):
     """
     Find angles that minimize energy for a given target position.
 
