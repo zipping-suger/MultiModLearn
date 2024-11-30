@@ -69,8 +69,7 @@ def load_model(model_type):
         return energy_model
     elif model_type == 'ebgan':
         ebgan_model = Generator(latent_size, hidden_size, output_size, condition_size)
-        ebgan_model.load_state_dict(torch.load('logs/ebgan_model_gradient_data_rs/generator_gradient_data_rs.pth', weights_only=True))
-        # ebgan_model.load_state_dict(torch.load('logs/ebgan2_model_gradient_data_rs/generator_gradient_data_rs.pth', weights_only=True))
+        ebgan_model.load_state_dict(torch.load('logs/ebgan_training/generator.pth', weights_only=True))
         ebgan_model.eval()
         ebgan_model.to('cuda')
         return ebgan_model
@@ -174,7 +173,7 @@ def main(method_type):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='2-Link Robotic Arm Inverse Kinematics')
-    parser.add_argument('--method', type=str, default='cgan', choices=['gradient_descent', 'mlp', 'cgan', 'cvae', 'reinforce', 'ibc', 'ebgan'], help='IK method to use')
+    parser.add_argument('--method', type=str, default='ibc', choices=['gradient_descent', 'mlp', 'cgan', 'cvae', 'reinforce', 'ibc', 'ebgan'], help='IK method to use')
     args = parser.parse_args()
     print(f"Using {args.method} method for inverse kinematics")
     main(args.method)
