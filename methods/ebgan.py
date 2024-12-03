@@ -125,7 +125,7 @@ def main():
     
     num_epochs = 100
     batch_size = 32
-    neg_count = 32
+    neg_count = 256
     repeat_energy_updates = 5
     
     learning_rate_e = 0.001
