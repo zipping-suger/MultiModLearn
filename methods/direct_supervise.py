@@ -51,10 +51,10 @@ def main():
     input_size = 2
     hidden_size = 64
     output_size = 2
-    num_epochs = 400
+    num_epochs = 4000
     iteration = 10
     batch_size = 32
-    learning_rate = 0.001
+    learning_rate = 0.0001
 
     # Robot parameters
     L1 = 3.0  # Length of link 1
