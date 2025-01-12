@@ -32,7 +32,7 @@ input_dim = 2
 latent_dim = 1
 
 # mdn
-num_gaussians = 5
+num_gaussians = 10
 
 def load_model(model_type):
     if model_type == 'mlp':
