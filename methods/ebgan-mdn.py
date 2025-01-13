@@ -108,12 +108,12 @@ def main():
     num_epochs = 100
     batch_size = 32
     neg_count = 256
-    repeat_energy_updates = 10
+    repeat_energy_updates = 5
     
     learning_rate_e = 0.001
     learning_rate_g = 0.001
     
-    num_gaussians = 5   # Number of gaussians for MDN
+    num_gaussians = 10   # Number of gaussians for MDN
     
     # Data bounds for counter-sample generation
     y_min = torch.tensor([-3.14, -3.14])  # Joint angle limits (radians)

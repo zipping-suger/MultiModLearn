@@ -82,6 +82,12 @@ def load_model(model_type):
         mdn_model.load_state_dict(torch.load('logs/mdn_model_gradient_data_rs/mdn_model_gradient_data_rs.pth', weights_only=True))
         mdn_model.eval()
         return mdn_model
+    elif model_type == 'ebgan-mdn':
+        ebgan_mdn_model = MDNGenerator(latent_size, hidden_size, output_size, num_gaussians, condition_size)
+        ebgan_mdn_model.load_state_dict(torch.load('logs/ebgan-mdn_training/mdn_generator.pth', weights_only=True))
+        ebgan_mdn_model.eval()
+        ebgan_mdn_model.to('cuda')
+        return ebgan_mdn_model
   
 def ik_methods(method, target_position):
     if method == 'gradient_descent':
@@ -117,12 +123,16 @@ def ik_methods(method, target_position):
         latent_vector = torch.randn(1, latent_size)
         condition = torch.tensor(target_position, dtype=torch.float32).unsqueeze(0)
         return mdn_model.sample(latent_vector, condition).detach().numpy()[0]
+    elif method == 'ebgan-mdn':
+        latent_vector = torch.randn(1, latent_size, device='cuda')
+        condition = torch.tensor(target_position, dtype=torch.float32).unsqueeze(0).to('cuda')
+        return ebgan_mdn_model.sample(latent_vector, condition).detach().cpu().numpy()[0]
     else:
         raise ValueError("Invalid method type")
 
 
 def main(method_type):
-    global mlp_model, cgan_model, cvae_model, reinforce_model, energy_model, ebgan_model, mdn_model
+    global mlp_model, cgan_model, cvae_model, reinforce_model, energy_model, ebgan_model, mdn_model, ebgan_mdn_model
 
     if method_type == 'mlp':
         mlp_model = load_model('mlp')
@@ -138,6 +148,8 @@ def main(method_type):
         ebgan_model = load_model('ebgan')
     elif method_type == 'mdn':
         mdn_model = load_model('mdn')
+    elif method_type == 'ebgan-mdn':
+        ebgan_mdn_model = load_model('ebgan-mdn')
 
     # Initialize plot
     fig, ax = plt.subplots(figsize=(6, 6))
@@ -188,7 +200,7 @@ def main(method_type):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='2-Link Robotic Arm Inverse Kinematics')
-    parser.add_argument('--method', type=str, default='mdn', choices=['gradient_descent', 'mlp', 'cgan', 'cvae', 'reinforce', 'ibc', 'ebgan', 'mdn'], help='IK method to use')
+    parser.add_argument('--method', type=str, default='mdn', choices=['gradient_descent', 'mlp', 'cgan', 'cvae', 'reinforce', 'ibc', 'ebgan', 'mdn', 'ebgan-mdn'], help='IK method to use')
     args = parser.parse_args()
     print(f"Using {args.method} method for inverse kinematics")
     main(args.method)
