@@ -102,7 +102,7 @@ def main():
     action_size = 2
     condition_size = 2
     hidden_size = 64
-    latent_size = 2
+    latent_size = 0
     output_size = 2
     
     num_epochs = 100

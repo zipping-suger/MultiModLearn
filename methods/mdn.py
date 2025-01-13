@@ -117,7 +117,7 @@ def main():
     args = parser.parse_args()
 
     # Hyperparameters
-    input_size = 2
+    input_size = 0
     hidden_size = 64
     output_size = 2
     num_gaussians = 10

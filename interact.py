@@ -32,7 +32,8 @@ input_dim = 2
 latent_dim = 1
 
 # mdn
-num_gaussians = 10
+mdn_input_size = 0
+num_gaussians = 2
 
 def load_model(model_type):
     if model_type == 'mlp':
@@ -78,12 +79,12 @@ def load_model(model_type):
         ebgan_model.to('cuda')
         return ebgan_model
     elif model_type == 'mdn':
-        mdn_model = MDNGenerator(input_size, hidden_size, output_size, num_gaussians, condition_size)
+        mdn_model = MDNGenerator(mdn_input_size, hidden_size, output_size, num_gaussians, condition_size)
         mdn_model.load_state_dict(torch.load('logs/mdn_model_gradient_data_rs/mdn_model_gradient_data_rs.pth', weights_only=True))
         mdn_model.eval()
         return mdn_model
     elif model_type == 'ebgan-mdn':
-        ebgan_mdn_model = MDNGenerator(latent_size, hidden_size, output_size, num_gaussians, condition_size)
+        ebgan_mdn_model = MDNGenerator(mdn_input_size, hidden_size, output_size, num_gaussians, condition_size)
         ebgan_mdn_model.load_state_dict(torch.load('logs/ebgan-mdn_training/mdn_generator.pth', weights_only=True))
         ebgan_mdn_model.eval()
         ebgan_mdn_model.to('cuda')
@@ -120,11 +121,11 @@ def ik_methods(method, target_position):
         condition = torch.tensor(target_position, dtype=torch.float32).unsqueeze(0).to('cuda')
         return ebgan_model(latent_vector, condition).detach().cpu().numpy()[0]
     elif method == 'mdn':
-        latent_vector = torch.randn(1, latent_size)
+        latent_vector = torch.randn(1, mdn_model.latent_size)
         condition = torch.tensor(target_position, dtype=torch.float32).unsqueeze(0)
         return mdn_model.sample(latent_vector, condition).detach().numpy()[0]
     elif method == 'ebgan-mdn':
-        latent_vector = torch.randn(1, latent_size, device='cuda')
+        latent_vector = torch.randn(1, ebgan_mdn_model.latent_size, device='cuda')
         condition = torch.tensor(target_position, dtype=torch.float32).unsqueeze(0).to('cuda')
         return ebgan_mdn_model.sample(latent_vector, condition).detach().cpu().numpy()[0]
     else:
