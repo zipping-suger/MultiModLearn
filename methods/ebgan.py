@@ -53,11 +53,14 @@ def info_nce_loss(energy_model, x, y, counter_samples):
 
 # Counter-sample generation
 def generate_counter_samples(y_min, y_max, batch_size, neg_count, device):
+    # make y_min and y_max the same device as the other tensors
+    y_min = y_min.to(device)
+    y_max = y_max.to(device)
     return [torch.rand((batch_size, y_min.size(-1)), device=device) * (y_max - y_min) + y_min 
             for _ in range(neg_count)]
 
 # Training function
-def train(dataloader, generator, energy_model, optimizer_g, optimizer_e, scheduler_e, 
+def train(dataloader, generator, energy_model, optimizer_g, optimizer_e, scheduler_e, scheduler_g,
           num_epochs, writer, y_min, y_max, neg_count, repeat_energy_updates, device):
     for epoch in range(num_epochs):
         epoch_e_loss = 0.0
@@ -103,6 +106,7 @@ def train(dataloader, generator, energy_model, optimizer_g, optimizer_e, schedul
             writer.add_scalar('Loss/Generator', g_loss.item(), epoch * len(dataloader) + i)
         
         scheduler_e.step()
+        scheduler_g.step()
         avg_e_loss = epoch_e_loss / len(dataloader) / repeat_energy_updates
         avg_g_loss = epoch_g_loss / len(dataloader)
         
@@ -121,7 +125,6 @@ def main():
     condition_size = 2
     hidden_size = 64
     latent_size = 2
-    output_size = 1
     
     num_epochs = 100
     batch_size = 32
@@ -146,6 +149,7 @@ def main():
     optimizer_g = optim.Adam(generator.parameters(), lr=learning_rate_g)
     optimizer_e = optim.Adam(energy_model.parameters(), lr=learning_rate_e)
     scheduler_e = optim.lr_scheduler.StepLR(optimizer_e, step_size=20, gamma=0.5)
+    scheduler_g = optim.lr_scheduler.StepLR(optimizer_g, step_size=20, gamma=0.5)
     
     # Setup tensorboard
     log_dir = os.path.join(args.log_dir, 'ebgan_training')
@@ -158,7 +162,7 @@ def main():
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     
     # Train
-    train(dataloader, generator, energy_model, optimizer_g, optimizer_e, scheduler_e,
+    train(dataloader, generator, energy_model, optimizer_g, optimizer_e, scheduler_e, scheduler_g,
           num_epochs, writer, y_min.to(device), y_max.to(device), neg_count, 
           repeat_energy_updates, device)
     
