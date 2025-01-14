@@ -55,6 +55,7 @@ def train_ebgan_mdn(dataloader, energy_model, generator, optimizer_e, optimizer_
         epoch_g_loss_e = 0.0
         epoch_g_loss_mdn = 0.0
         epoch_g_loss = 0.0
+        batch_counter = 0
         
         if dynamic_scaling_true:
             alpha = dynamic_scaling(epoch, num_epochs, min_scale)
@@ -105,11 +106,14 @@ def train_ebgan_mdn(dataloader, energy_model, generator, optimizer_e, optimizer_
             optimizer_g.step()
 
             # Log losses
-            writer.add_scalar('Loss/EnergyModel', e_loss.item(), epoch * len(dataloader) + i)
-            writer.add_scalar('Loss/GeneratorE', g_loss_e.item(), epoch * len(dataloader) + i)
-            writer.add_scalar('Loss/MDN', mdn_g_loss.item(), epoch * len(dataloader) + i)
-            writer.add_scalar('Loss/Generator', g_loss.item(), epoch * len(dataloader) + i)
-
+            if writer:
+                writer.add_scalar('Loss/EnergyModel', e_loss.item(), epoch * len(dataloader) + batch_counter)
+                writer.add_scalar('Loss/GeneratorE', g_loss_e.item(), epoch * len(dataloader) + batch_counter)
+                writer.add_scalar('Loss/MDN', mdn_g_loss.item(), epoch * len(dataloader) + batch_counter)
+                writer.add_scalar('Loss/Generator', g_loss.item(), epoch * len(dataloader) + batch_counter)
+            
+            batch_counter += 1
+            
         scheduler_e.step()
         scheduler_g.step()
         avg_e_loss = epoch_e_loss / len(dataloader) / repeat_energy_updates
