@@ -65,10 +65,10 @@ def train(dataloader, generator, energy_model, optimizer_g, optimizer_e, schedul
     for epoch in range(num_epochs):
         epoch_e_loss = 0.0
         epoch_g_loss = 0.0
-        
-        for i, batch in enumerate(dataloader):
-            x_input = batch['position'].float().to(device)
-            y_target = batch['angles'].float().to(device)
+        i = 0
+        for batch_x, batch_y in dataloader:
+            x_input = batch_x.float().to(device)
+            y_target = batch_y.float().to(device)
             
             # Update energy model
             for _ in range(repeat_energy_updates):
@@ -102,9 +102,11 @@ def train(dataloader, generator, energy_model, optimizer_g, optimizer_e, schedul
             epoch_g_loss += g_loss.item()
             
             # Log losses
-            writer.add_scalar('Loss/EnergyModel', e_loss.item(), epoch * len(dataloader) + i)
-            writer.add_scalar('Loss/Generator', g_loss.item(), epoch * len(dataloader) + i)
-        
+            if writer:
+                writer.add_scalar('Loss/EnergyModel', e_loss.item(), epoch * len(dataloader) + i)
+                writer.add_scalar('Loss/Generator', g_loss.item(), epoch * len(dataloader) + i)
+            i += 1
+            
         scheduler_e.step()
         scheduler_g.step()
         avg_e_loss = epoch_e_loss / len(dataloader) / repeat_energy_updates

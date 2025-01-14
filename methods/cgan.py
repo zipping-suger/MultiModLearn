@@ -69,9 +69,10 @@ def compute_generator_loss(discriminator, fake_samples, condition):
 def train(dataloader, generator, discriminator, optimizer_g, optimizer_d, num_epochs, writer):
     # Training loop following the algorithm in the image
     for epoch in range(num_epochs):
-        for i, batch in enumerate(dataloader):
-            position = batch['position'].float()
-            angles = batch['angles'].float()
+        i = 0
+        for batch_x, batch_y in dataloader:
+            position = batch_x
+            angles = batch_y
             
             # Step 1: Update discriminator
             for _ in range(20):  # Can adjust number of discriminator updates per generator update
@@ -100,10 +101,12 @@ def train(dataloader, generator, discriminator, optimizer_g, optimizer_d, num_ep
             optimizer_g.step()
 
             # Log losses and scores
-            writer.add_scalar('Loss/Discriminator', d_loss.item(), epoch * len(dataloader) + i)
-            writer.add_scalar('Loss/Generator', g_loss.item(), epoch * len(dataloader) + i)
-            writer.add_scalar('Score/Real', real_score.item(), epoch * len(dataloader) + i)
-            writer.add_scalar('Score/Fake', fake_score.item(), epoch * len(dataloader) + i)
+            if writer:
+                writer.add_scalar('Loss/Discriminator', d_loss.item(), epoch * len(dataloader) + i)
+                writer.add_scalar('Loss/Generator', g_loss.item(), epoch * len(dataloader) + i)
+                writer.add_scalar('Score/Real', real_score.item(), epoch * len(dataloader) + i)
+                writer.add_scalar('Score/Fake', fake_score.item(), epoch * len(dataloader) + i)
+            i+=1
 
         print(f"Epoch [{epoch+1}/{num_epochs}], Discriminator Loss: {d_loss.item():.4f}, Generator Loss: {g_loss.item():.4f}")
 

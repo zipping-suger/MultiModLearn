@@ -86,18 +86,19 @@ def train(model, dataloader, mdn_loss, optimizer, scheduler, num_epochs, writer,
     model.train()
     for epoch in range(num_epochs):
         epoch_loss = 0.0
-        for batch in dataloader:
-            position = batch['position'].float().to(device)
-            angle = batch['angles'].float().to(device)
+            
+        for batch_x, batch_y in dataloader:
+            positions = batch_x
+            angles = batch_y
 
             # Draw noise samples
-            z = torch.randn(position.size(0), model.latent_size).to(device)
+            z = torch.randn(positions.size(0), model.latent_size).to(device)
             
             # Generate MDN outputs
-            log_pi, mu, sigma = model(z, position)
+            log_pi, mu, sigma = model(z, positions)
             
             # Compute MDN loss
-            loss = mdn_loss(log_pi, mu, sigma, angle)
+            loss = mdn_loss(log_pi, mu, sigma, angles)
             
             # Update generator
             optimizer.zero_grad()
@@ -108,8 +109,9 @@ def train(model, dataloader, mdn_loss, optimizer, scheduler, num_epochs, writer,
         
         scheduler.step()
         avg_loss = epoch_loss / len(dataloader)
-        writer.add_scalar('Loss/train', avg_loss, epoch)
-        writer.add_scalar('Learning Rate', scheduler.get_last_lr()[0], epoch)
+        if writer:
+            writer.add_scalar('Loss/train', avg_loss, epoch)
+            writer.add_scalar('Learning Rate', scheduler.get_last_lr()[0], epoch)
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}, LR: {scheduler.get_last_lr()[0]:.6f}')
 
 def main():
