@@ -21,7 +21,7 @@ class NoiseType(Enum):
 
 
 class MDNGenerator(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_gaussians, condition_size, noise_type=NoiseType.ISOTROPIC, fixed_noise_level=None):
+    def __init__(self, input_size, hidden_size, output_size, num_gaussians, condition_size, noise_type=NoiseType.ISOTROPIC, fixed_noise_level=None, temperature = 1):
         super(MDNGenerator, self).__init__()
         assert (fixed_noise_level is not None) == (noise_type is NoiseType.FIXED)
         self.latent_size = input_size
@@ -43,11 +43,12 @@ class MDNGenerator(nn.Module):
         )
         self.pi = nn.Linear(hidden_size, num_gaussians)
         self.normal_network = nn.Linear(hidden_size, output_size * num_gaussians + num_sigma_channels)
+        self.temperature = temperature
 
     def forward(self, x, condition, eps=1e-6):
         x = torch.cat([x, condition], dim=1)
         hidden = self.hidden(x)
-        log_pi = torch.log_softmax(self.pi(hidden), dim=1)
+        log_pi = torch.log_softmax(self.pi(hidden)/ self.temperature, dim=1)
         normal_params = self.normal_network(hidden)
         mu = normal_params[..., :self.num_gaussians * self.output_size]
         sigma = normal_params[..., self.num_gaussians * self.output_size:]

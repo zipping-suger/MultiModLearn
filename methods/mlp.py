@@ -34,9 +34,9 @@ def train(model, dataloader, criterion, optimizer, scheduler, num_epochs, writer
     model.train()
     for epoch in range(num_epochs):
         epoch_loss = 0.0
-        for batch in dataloader:
-            positions = batch['position']
-            angles = batch['angles']
+        for batch_x, batch_y in dataloader:
+            positions = batch_x
+            angles = batch_y
             
             outputs = model(positions)
             loss = criterion(outputs, angles)
@@ -49,8 +49,9 @@ def train(model, dataloader, criterion, optimizer, scheduler, num_epochs, writer
         
         scheduler.step()
         avg_loss = epoch_loss / len(dataloader)
-        writer.add_scalar('Loss/train', avg_loss, epoch)
-        writer.add_scalar('Learning Rate', scheduler.get_last_lr()[0], epoch)
+        if writer:
+            writer.add_scalar('Loss/train', avg_loss, epoch)
+            writer.add_scalar('Learning Rate', scheduler.get_last_lr()[0], epoch)
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}, LR: {scheduler.get_last_lr()[0]:.6f}')
 
 def main():
