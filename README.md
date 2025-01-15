@@ -64,3 +64,9 @@ Use your mouse to specify target positions, and the selected model will compute 
    python interact.py --method mlp
    ```
 
+
+# Robot Experiments:
+The link to the repo: https://github.com/zipping-suger/diffusion_policy
+
+
+The experiments are adapted from the awesome project: [Diffusion Policy](https://diffusion-policy.cs.columbia.edu/)
