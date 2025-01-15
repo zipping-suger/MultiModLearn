@@ -39,8 +39,8 @@ def load_model(model_type):
     if model_type == 'mlp':
         model = MLP(input_size, hidden_size, output_size)
         # model.load_state_dict(torch.load('logs/mlp_model_gradient_data/mlp_model_model_gradient_data.pth', weights_only=True))
-        # model.load_state_dict(torch.load('logs/mlp_model_gradient_data_rs/mlp_model_gradient_data_rs.pth', weights_only=True))
-        model.load_state_dict(torch.load('logs/mlp_model_direct_differentiable/mlp_model_direct_differentiable.pth', weights_only=True))
+        model.load_state_dict(torch.load('logs/mlp_model_gradient_data_rs/mlp_model_gradient_data_rs.pth', weights_only=True))
+        # model.load_state_dict(torch.load('logs/mlp_model_direct_differentiable/mlp_model_direct_differentiable.pth', weights_only=True))
         # model.load_state_dict(torch.load('logs/mlp_model_incremental_data/mlp_model_incremental_data.pth', weights_only=True))
         model.eval()
         return model

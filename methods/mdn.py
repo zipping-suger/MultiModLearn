@@ -120,7 +120,7 @@ def main():
     input_size = 0
     hidden_size = 64
     output_size = 2
-    num_gaussians = 10
+    num_gaussians = 2
     condition_size = 2
     num_epochs = 100
     batch_size = 32
