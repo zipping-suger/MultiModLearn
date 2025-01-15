@@ -80,7 +80,7 @@ You can organize the GIFs in a 2x2 grid by using HTML within your Markdown file.
 ```markdown
 # Interaction with Models
 
-Use your mouse to specify target positions, and the selected model will compute the joint angles (`theta1`, `theta2`) to move the arm in real time.
+Use your mouse to specify target positions, and the selected model will compute the joint angles (`theta1`, `theta2`) to move the arm in real time as shown in the gifs below.
 
 **Run the Script**  
    Specify an IK method when running the script:
@@ -90,20 +90,20 @@ Use your mouse to specify target positions, and the selected model will compute 
 
 
 <div style="display: flex; flex-wrap: wrap;">
-  <div style="flex: 50%; text-align: center;">
+  <div style="flex: 40%; text-align: center;">
     <img src="asset/ebgan_mdn.gif" alt="EBGAN-MDN">
     <p>EBGAN-MDN</p>
   </div>
-  <div style="flex: 50%; text-align: center;">
+  <div style="flex: 40%; text-align: center;">
     <img src="asset/cGAN.gif" alt="cGAN">
     <p>cGAN</p>
   </div>
-  <div style="flex: 50%; text-align: center;">
+  <div style="flex: 40%; text-align: center;">
     <img src="asset/EBC.gif" alt="EBC">
     <p>EBC</p>
   </div>
 
-  <div style="flex: 50%; text-align: center;">
+  <div style="flex: 40%; text-align: center;">
     <img src="asset/IBC.gif" alt="IBC">
     <p>IBC</p>
   </div>
