@@ -23,10 +23,9 @@ def info_nce_loss(energy_model, x, y, counter_samples, generator_samples, alpha)
     positive_energy = -energy_model(x, y)
     neg_energies = torch.stack([-energy_model(x, neg) for neg in counter_samples], dim=1)
     generator_energy = -energy_model(x, generator_samples)
-
     # Apply dynamic scaling to the generator term
     denominator = torch.logsumexp(
-        torch.cat([positive_energy.unsqueeze(-1), neg_energies, generator_energy.unsqueeze(-1)], dim=-1),
+        torch.cat([positive_energy.unsqueeze(-1), neg_energies, alpha * generator_energy.unsqueeze(-1)], dim=-1),
         dim=-1
     )
     return torch.mean(denominator - positive_energy)
