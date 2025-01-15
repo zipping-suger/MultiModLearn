@@ -18,6 +18,7 @@ class NoiseType(Enum):
     ISOTROPIC = auto()
     ISOTROPIC_ACROSS_CLUSTERS = auto()
     FIXED = auto()
+    LAPLACE = auto()
 
 
 class MDNGenerator(nn.Module):
@@ -34,6 +35,7 @@ class MDNGenerator(nn.Module):
             NoiseType.ISOTROPIC: num_gaussians,
             NoiseType.ISOTROPIC_ACROSS_CLUSTERS: 1,
             NoiseType.FIXED: 0,
+            NoiseType.LAPLACE: output_size * num_gaussians,
         }[noise_type]
         self.hidden = nn.Sequential(
             nn.Linear(input_size + condition_size, hidden_size),
@@ -60,6 +62,8 @@ class MDNGenerator(nn.Module):
             sigma = torch.exp(sigma + eps).repeat(1, self.num_gaussians * self.output_size)
         if self.noise_type is NoiseType.FIXED:
             sigma = torch.full_like(mu, fill_value=self.fixed_noise_level)
+        elif self.noise_type is NoiseType.LAPLACE:
+            sigma = torch.exp(sigma + eps)
         mu = mu.view(-1, self.num_gaussians, self.output_size)
         sigma = sigma.view(-1, self.num_gaussians, self.output_size)
         return log_pi, mu, sigma
@@ -69,8 +73,12 @@ class MDNGenerator(nn.Module):
         cum_pi = torch.cumsum(torch.exp(log_pi), dim=-1)
         rvs = torch.rand(len(x), 1).to(x.device)
         rand_pi = torch.searchsorted(cum_pi, rvs)
-        rand_normal = torch.randn_like(mu) * sigma + mu
-        samples = torch.gather(rand_normal, 1, rand_pi.unsqueeze(-1).expand(-1, -1, mu.size(-1))).squeeze(1)
+        if self.noise_type is NoiseType.LAPLACE:
+            rand = torch.distributions.Laplace(torch.zeros_like(mu), torch.ones_like(sigma)).sample()
+        else:
+            rand = torch.randn_like(mu)
+        rand = rand * sigma + mu
+        samples = torch.gather(rand, 1, rand_pi.unsqueeze(-1).expand(-1, -1, mu.size(-1))).squeeze(1)
         return samples
 
 def mdn_loss(log_pi, mu, sigma, y):
