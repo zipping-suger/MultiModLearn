@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import Dataset
 import numpy as np
 from robot import TwoLinkRobotIK
+from ur5 import UR5RobotIK
 import time
 import os
 from tqdm import tqdm
@@ -140,6 +141,7 @@ def visualize_data(data):
     ax.set_aspect('equal')
     plt.show()
 
+# For the 2-link robot
 class RobotDataset(Dataset):
     def __init__(self, data_or_path):
         if isinstance(data_or_path, str):
@@ -157,14 +159,27 @@ class RobotDataset(Dataset):
             'position': torch.tensor([target_x, target_y], dtype=torch.float32),
             'angles': torch.tensor([theta1, theta2], dtype=torch.float32)
         }
+        
+# For the UR5 robot
+class UR5RobotDataset(Dataset):
+    def __init__(self, data_or_path):
+        if isinstance(data_or_path, str):
+            self.data = np.load(data_or_path)
+        else:
+            self.data = data_or_path
+    
+    def __len__(self):
+        return len(self.data)
+    
+    def __getitem__(self, idx):
+        sample = self.data[idx]
+        target_x, target_y, target_z, theta1, theta2, theta3, theta4, theta5, theta6 = sample
+        return {
+            'position': torch.tensor([target_x, target_y, target_z], dtype=torch.float32),
+            'angles': torch.tensor([theta1, theta2, theta3, theta4, theta5, theta6], dtype=torch.float32)
+        }
 
-def main():
-    parser = argparse.ArgumentParser(description="Generate robot data using different methods")
-    parser.add_argument('--method', type=str, choices=['analytical', 'gradient', 'incremental'], required=True, help="Method to generate data")
-    parser.add_argument('--num_samples', type=int, default=2000, help="Number of samples to generate")
-    parser.add_argument('--save_path', type=str, default="data/", help="Path to save the generated data")
-    args = parser.parse_args()
-
+def generate_2link_data(args):
     L1 = 3.0
     L2 = 3.0
     robot = TwoLinkRobotIK(L1, L2)
@@ -182,6 +197,41 @@ def main():
         data = generate_data_incremental_sampling(robot, args.num_samples)
         np.save(f"{args.save_path}incremental_data.npy", data)
         visualize_data(data)
+
+def generate_ur5_data(args):
+    robot = UR5RobotIK()
+
+    if not os.path.exists(args.save_path):
+        os.makedirs(args.save_path)
+
+    data = []
+    samples = robot.sample_from_workspace(args.num_samples)
+
+    for desired_pos in tqdm(samples, desc="Generating UR5 analytical data"):
+        solutions = robot.invKine(desired_pos)  # returns a matrix of 6x8, the 8 columns are the 8 possible solutions
+        for i in range(solutions.shape[1]):
+            solution = solutions[:, i]
+            if solution.shape[0] == 6:  # Ensure the solution has 6 elements
+                theta1, theta2, theta3, theta4, theta5, theta6 = solution
+                target_x, target_y, target_z = desired_pos[0, 3], desired_pos[1, 3], desired_pos[2, 3]
+                data.append([target_x, target_y, target_z, theta1, theta2, theta3, theta4, theta5, theta6])
+
+    data = np.array(data, dtype=object)
+    np.save(f"{args.save_path}ur5_analytical_data.npy", data)
+    print(f"Data generation completed. Saved to {args.save_path}ur5_analytical_data.npy")
+
+def main():
+    parser = argparse.ArgumentParser(description="Generate robot data using different methods")
+    parser.add_argument('--problem', type=str, choices=['2link', 'ur5'], required=True, help="Robot type to generate data for")
+    parser.add_argument('--method', type=str, choices=['analytical', 'gradient', 'incremental'], help="Method to generate data (only for 2link)")
+    parser.add_argument('--num_samples', type=int, default=512, help="Number of samples to generate")
+    parser.add_argument('--save_path', type=str, default="data/", help="Path to save the generated data")
+    args = parser.parse_args()
+
+    if args.problem == '2link':
+        generate_2link_data(args)
+    elif args.problem == 'ur5':
+        generate_ur5_data(args)
 
 if __name__ == "__main__":
     main()
